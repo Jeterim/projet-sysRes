@@ -3,11 +3,15 @@ import os
 import socket
 import time
 import hashlib
+import acl
 from threading import Thread
 from socketserver import ThreadingMixIn #Python 3
 
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "Doctor", "lastCo": "1355563265.81"}};
 
+#Init Acl
+acli = acl.Acl()
+acli.build_acl('permissions.xml')
 
 class ClientThread(Thread):
 
@@ -15,23 +19,24 @@ class ClientThread(Thread):
         Thread.__init__(self)
         self.ip = ip
         self.port = port
-        print ("[+] New thread started for "+ip+":"+str(port))
+        print("[+] New thread started for "+ip+":"+str(port))
 
 
     def run(self):
+        print("test acces : {}".format(acli.check_access('doctor', 'general', 'w')))
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
                 break
-            print ("received data:", data)
+            print("received data:", data)
             args = data.split(";")
             if args[0] == "LOGIN":
                 auth = args[1].split(":")
-                print ("Login : {} Password : {}".format(auth[0], auth[1]))
+                print("Login : {} Password : {}".format(auth[0], auth[1]))
                 successauth = 0
                 for user in data_dict:
                     if user == auth[0] and data_dict[user]["password"] == auth[1]:
-                        print ("it's him")
+                        print("it's him")
                         successauth = 1
                         break
                 if successauth == 1:
@@ -51,7 +56,7 @@ class ClientThread(Thread):
                     else:
                         lsList.append("R;{}/".format(fileO))
 
-                print (lsList)
+                print(lsList)
                 conn.send(", ".join(lsList).encode())
             elif args[0] == "OPEN":
                 myDir = "multi" #A mettre en place plus haut (instancier une seule fois)
@@ -60,7 +65,7 @@ class ClientThread(Thread):
                     os.system("open {}/{}".format(myDir, openFile))
                     conn.send(b"opening")
             else:
-                print ("Echec action")
+                print("Echec action")
 
 TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
@@ -74,7 +79,7 @@ threads = []
 
 while True:
     tcpsock.listen(4)
-    print ("Waiting for incoming connections...")
+    print("Waiting for incoming connections...")
     (conn, (ip, port)) = tcpsock.accept()
     newthread = ClientThread(ip, port)
     newthread.start()
