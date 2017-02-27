@@ -4,7 +4,6 @@ import socket
 import time
 import hashlib
 from threading import Thread
-#from SocketServer import ThreadingMixIn #Python 2
 from socketserver import ThreadingMixIn #Python 3
 
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "Doctor", "lastCo": "1355563265.81"}};
