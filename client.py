@@ -37,7 +37,7 @@ def run():
         # try/except a faire
         print(pswdhash)
         #s.send("{};{}:{}".format("LOGIN", login, pswdhash))
-        s.send(bytes("{};{}:{}".format("LOGIN", login, pswdhash), 'utf-8'))
+        s.send(bytes("{} {}:{}".format("LOGIN", login, pswdhash), 'utf-8'))
         time.sleep(0.5)
         data = s.recv(BUFFER_SIZE).decode('utf-8')
         print("Le serveur me donne : {}".format(data))
@@ -56,25 +56,28 @@ def run():
             print("+ {}       {}".format(menu, MENU[menu]))
         print("-------------------\nTappez quit pour quitter le client\n")
         val = input("Tappez votre commande ")
+        s.send(val.encode())
+        data = s.recv(BUFFER_SIZE).decode()
+        print(data)
 
-        if val == "LS":
-            print("Ls a faire")
-            s.send(b"LS;NULL")
-            data = s.recv(BUFFER_SIZE).decode()
-            print("Le serveur me donne : {}".format(data))
-            listFileS = data.split(", ")
-            for file in listFileS:
-                fileS = file.split(";")
-                print(fileS[0], fileS[1])
-        elif val == "OPEN":
-            print("OPEN a faire")
-            fileO = input("Fichier a ouvrir : ")
-            s.send("OPEN;{}".format(fileO).encode())
-            data = s.recv(BUFFER_SIZE).decode()
-            print("Le serveur me donne : {}".format(data))
-        else:
-            if val != "quit":
-                print("Commande non reconnue")
+        # if val == "LS":
+        #     print("Ls a faire")
+        #     s.send(b"LS;NULL")
+        #     data = s.recv(BUFFER_SIZE).decode()
+        #     print("Le serveur me donne : {}".format(data))
+        #     listFileS = data.split(", ")
+        #     for file in listFileS:
+        #         fileS = file.split(";")
+        #         print(fileS[0], fileS[1])
+        # elif val == "OPEN":
+        #     print("OPEN a faire")
+        #     fileO = input("Fichier a ouvrir : ")
+        #     s.send("OPEN;{}".format(fileO).encode())
+        #     data = s.recv(BUFFER_SIZE).decode()
+        #     print("Le serveur me donne : {}".format(data))
+        # else:
+        #     if val != "quit":
+        #         print("Commande non reconnue")
 
     print("Fin du client")
     s.close()
