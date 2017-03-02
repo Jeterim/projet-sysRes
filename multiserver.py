@@ -7,11 +7,12 @@ import acl
 from threading import Thread
 from socketserver import ThreadingMixIn #Python 3
 
-data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "Doctor", "lastCo": "1355563265.81"}};
+data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}};
 
 #Init Acl
 acli = acl.Acl()
 acli.build_acl('permissions.xml')
+
 
 class ClientThread(Thread):
 
@@ -37,6 +38,8 @@ class ClientThread(Thread):
                 for user in data_dict:
                     if user == auth[0] and data_dict[user]["password"] == auth[1]:
                         print("it's him")
+                        updateTime(user)
+                        manageConnexion(user)
                         successauth = 1
                         break
                 if successauth == 1:
@@ -64,8 +67,27 @@ class ClientThread(Thread):
                 if os.path.isfile(os.path.join(myDir, openFile)):
                     os.system("open {}/{}".format(myDir, openFile))
                     conn.send(b"opening")
+            elif args[0] == "LOGOUT":
+                manageConnexion("john")
             else:
                 print("Echec action")
+#Fin ClientThread
+
+def updateTime(username):
+    for user in data_dict.keys():
+        if user == username:
+            print("Hello again")
+            print(data_dict[user]['lastCo'])
+            data_dict[user]['lastCo'] = time.time()
+            print("And now it's {}".format(data_dict[user]['lastCo']))
+
+def manageConnexion(username):
+    for user in data_dict.keys():
+        if user == username:
+            print(data_dict[user]['connected'])
+            data_dict[user]['connected'] = not(data_dict[user]['connected'])
+            print("And now it's {}".format(data_dict[user]['connected']))
+
 
 TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
