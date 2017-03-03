@@ -45,3 +45,9 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
         + Password
         + Role
         + Last connexion
+
+## Bilan 1ere séance
+- Gestion des autentifications autre que en dur
+- Posibilité d'avoir des actions supplémentaires pour certains roles pour ajouter ou modifier les personnes pouvant d'autentitfier
+- Voir comment gerer les identifiants/mdp autre que ne dur (BDD ?)
+- Gerer les outils et commandes dynamiques (ex vi) et comment gerer la relation client/serveur

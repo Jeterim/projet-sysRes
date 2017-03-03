@@ -70,7 +70,7 @@ class ClientThread(Thread):
                 if os.path.isfile(os.path.join(myDir, openFile)):
                     os.system("open {}/{}".format(myDir, openFile))
                     conn.send(b"opening")
-            elif args[0] == "LOGOUT":
+            elif args[0] == "LOGOUT": #Gestion de la deconnexion
                 self.manageConnexion()
             else:
                 print("Echec action")
@@ -87,7 +87,7 @@ class ClientThread(Thread):
         for user in data_dict.keys():
             if user == self.username:
                 print(data_dict[user]['connected'])
-                data_dict[user]['connected'] = not(data_dict[user]['connected'])
+                data_dict[user]['connected'] = not data_dict[user]['connected']
                 print("And now it's {}".format(data_dict[user]['connected']))
 #Fin ClientThread
 

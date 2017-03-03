@@ -90,20 +90,5 @@
                 <privilege>x</privilege>
             </privileges>
         </permission>
-
-        <permission>
-            <resources>
-                <resource>john</resource>
-            </resources>
- 
-            <roles>
-                <role>john</role>
-            </roles>
-            <privileges>
-                <privilege>r</privilege>
-                <privilege>w</privilege>
-                <privilege>x</privilege>
-            </privileges>
-        </permission>
     </permissions>
 </config>
