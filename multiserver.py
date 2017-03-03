@@ -20,11 +20,12 @@ class ClientThread(Thread):
         Thread.__init__(self)
         self.ip = ip
         self.port = port
+        self.username = ""
         print("[+] New thread started for "+ip+":"+str(port))
 
 
     def run(self):
-        print("test acces : {}".format(acli.check_access('doctor', 'general', 'w')))
+        print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
@@ -38,13 +39,15 @@ class ClientThread(Thread):
                 for user in data_dict:
                     if user == auth[0] and data_dict[user]["password"] == auth[1]:
                         print("it's him")
-                        updateTime(user)
-                        manageConnexion(user)
                         successauth = 1
                         break
                 if successauth == 1:
+                    self.username = user
+                    self.updateTime()
+                    self.manageConnexion()
                     # Check proprement si le login/mdp est correct
                     # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
+                    print(self.username)
                     conn.send(b"granted")
                 else:
                     conn.send(b"forbidden")
@@ -68,25 +71,25 @@ class ClientThread(Thread):
                     os.system("open {}/{}".format(myDir, openFile))
                     conn.send(b"opening")
             elif args[0] == "LOGOUT":
-                manageConnexion("john")
+                self.manageConnexion()
             else:
                 print("Echec action")
+
+    def updateTime(self):
+        for user in data_dict.keys():
+            if user == self.username:
+                print("Hello again")
+                print(data_dict[user]['lastCo'])
+                data_dict[user]['lastCo'] = time.time()
+                print("And now it's {}".format(data_dict[user]['lastCo']))
+
+    def manageConnexion(self):
+        for user in data_dict.keys():
+            if user == self.username:
+                print(data_dict[user]['connected'])
+                data_dict[user]['connected'] = not(data_dict[user]['connected'])
+                print("And now it's {}".format(data_dict[user]['connected']))
 #Fin ClientThread
-
-def updateTime(username):
-    for user in data_dict.keys():
-        if user == username:
-            print("Hello again")
-            print(data_dict[user]['lastCo'])
-            data_dict[user]['lastCo'] = time.time()
-            print("And now it's {}".format(data_dict[user]['lastCo']))
-
-def manageConnexion(username):
-    for user in data_dict.keys():
-        if user == username:
-            print(data_dict[user]['connected'])
-            data_dict[user]['connected'] = not(data_dict[user]['connected'])
-            print("And now it's {}".format(data_dict[user]['connected']))
 
 
 TCP_IP = '0.0.0.0'
