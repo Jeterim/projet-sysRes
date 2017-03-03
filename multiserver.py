@@ -31,8 +31,11 @@ class ClientThread(Thread):
             if args[0] == "LOGIN":
                 self.connect(args)
             else:
-                # # TODO Check if dangerous command
-                run(args, stdout=conn.makefile('r'))
+                # TODO Check if dangerous command
+                run(args,
+                    stdout=conn.makefile('w'),
+                    stdin=conn.makefile('r'),
+                    stderr=conn.makefile('w'))
 
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())
