@@ -5,7 +5,8 @@ import socket
 import time
 from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
-import subprocess
+from subprocess import Popen, PIPE
+import shlex
 
 data_dict = {"john": {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a",
                       "role": "Doctor", "lastCo": "1355563265.81"}}
@@ -30,10 +31,17 @@ class ClientThread(Thread):
             if args[0] == "LOGIN":
                 self.connect(args)
             else:
-                # TODO Check if dangerous command
-                print(args)
-                output = subprocess.run(args, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
-                conn.send("{}".format(output.stdout).encode())
+                # # TODO Check if dangerous command
+                # print(args)
+                # output = subprocess.run(args, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+                # conn.send("{}".format(output.stdout).encode())
+                process = Popen("bash", stdin=PIPE, stdout=PIPE, shell=True)
+                self.run_command(process, args)
+
+    def run_command(self, process, args):
+        out, err = process.communicate(input=" ".join(args).encode())
+        print("{}; {}".format(out.decode('utf-8'), err))
+        conn.send(out)
 
     def connect(self, args):
         auth = args[1].split(":")
