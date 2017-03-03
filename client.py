@@ -8,8 +8,7 @@ import hashlib
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6262
 BUFFER_SIZE = 2048
-MENU = {"LS": "Liste un repertoire",
-        "MV": "Se deplacer dans un repertoire", "EXE": "Executer une commande"}
+MENU = {"": ""}
 
 
 def run():
