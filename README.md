@@ -25,6 +25,7 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
 - [ ] Gestion des droits (via ACLs)
 - [ ] Connexion chiffrée (clés pas en clair sur le poste client + certificat coté serveur) SSL
 - [ ] Flux graphiques ?
+- [ ] Creer des logs sur les actions effectués ?
 
 
 
@@ -34,7 +35,7 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
 - [ ] Mise en place de l'interface pour les actions
 - [ ] Chiffrement (clés)
 - [ ] Flux graphiques ?
-- [ ]
+- [ ] Interface graphique ? 
 
 
 ## BDD / Dict
@@ -44,3 +45,9 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
         + Password
         + Role
         + Last connexion
+
+## Bilan 1ere séance
+- Gestion des autentifications autre que en dur
+- Posibilité d'avoir des actions supplémentaires pour certains roles pour ajouter ou modifier les personnes pouvant d'autentitfier
+- Voir comment gerer les identifiants/mdp autre que ne dur (BDD ?)
+- Gerer les outils et commandes dynamiques (ex vi) et comment gerer la relation client/serveur
