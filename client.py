@@ -37,45 +37,47 @@ def run():
         s.send(bytes("{};{}:{}".format("LOGIN", login, pswdhash), 'utf-8'))
         time.sleep(0.5)
         data = s.recv(BUFFER_SIZE).decode('utf-8')
-        print ("Le serveur me donne : {}".format(data))
+        print("Le serveur me donne : {}".format(data))
         if data == "granted":
             tentatives = 0
             access = 1
         else:
             tentatives = tentatives - 1
-            print ("L'autentification a echouee il vous reste {} tentative(s)".format(tentatives))
+            print("L'autentification a echouee il vous reste {} tentative(s)".format(tentatives))
 
 
 
 
     val = ""
     while val != "quit" and access == 1:
-        print ("\n-------------------")
+        print("\n-------------------")
         for menu in MENU:
             print ("+ {}       {}".format(menu, MENU[menu]))
-        print ("-------------------\nTappez quit pour quitter le client\n")
+        print("-------------------\nTappez quit pour quitter le client\n")
         val = input("Tappez votre commande ")
 
         if val == "LS":
-            print ("Ls a faire")
+            print("Ls a faire")
             s.send(b"LS;NULL")
             data = s.recv(BUFFER_SIZE).decode()
-            print ("Le serveur me donne : {}".format(data))
+            print("Le serveur me donne : {}".format(data))
             listFileS = data.split(", ")
             for file in listFileS:
                 fileS = file.split(";")
-                print (fileS[0], fileS[1])
+                print(fileS[0], fileS[1])
         elif val == "OPEN":
-            print ("OPEN a faire")
+            print("OPEN a faire")
             fileO = input("Fichier a ouvrir : ")
             s.send("OPEN;{}".format(fileO).encode())
             data = s.recv(BUFFER_SIZE).decode()
-            print ("Le serveur me donne : {}".format(data))
+            print("Le serveur me donne : {}".format(data))
         else:
             if val != "quit":
-                print ("Commande non reconnue")
+                print("Commande non reconnue")
 
-    print ("Fin du client")
+    print("Fin du client")
+    #Gestion de la déconnexion
+    s.send("LOGOUT;NULL".encode())
     s.close()
 
 if __name__ == "__main__":

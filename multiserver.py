@@ -3,10 +3,15 @@ import os
 import socket
 import time
 import hashlib
+import acl
 from threading import Thread
 from socketserver import ThreadingMixIn #Python 3
 
-data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "Doctor", "lastCo": "1355563265.81"}};
+data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}};
+
+#Init Acl
+acli = acl.Acl()
+acli.build_acl('permissions.xml')
 
 
 class ClientThread(Thread):
@@ -15,28 +20,34 @@ class ClientThread(Thread):
         Thread.__init__(self)
         self.ip = ip
         self.port = port
-        print ("[+] New thread started for "+ip+":"+str(port))
+        self.username = ""
+        print("[+] New thread started for "+ip+":"+str(port))
 
 
     def run(self):
+        print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
                 break
-            print ("received data:", data)
+            print("received data:", data)
             args = data.split(";")
             if args[0] == "LOGIN":
                 auth = args[1].split(":")
-                print ("Login : {} Password : {}".format(auth[0], auth[1]))
+                print("Login : {} Password : {}".format(auth[0], auth[1]))
                 successauth = 0
                 for user in data_dict:
                     if user == auth[0] and data_dict[user]["password"] == auth[1]:
-                        print ("it's him")
+                        print("it's him")
                         successauth = 1
                         break
                 if successauth == 1:
+                    self.username = user
+                    self.updateTime()
+                    self.manageConnexion()
                     # Check proprement si le login/mdp est correct
                     # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
+                    print(self.username)
                     conn.send(b"granted")
                 else:
                     conn.send(b"forbidden")
@@ -51,7 +62,7 @@ class ClientThread(Thread):
                     else:
                         lsList.append("R;{}/".format(fileO))
 
-                print (lsList)
+                print(lsList)
                 conn.send(", ".join(lsList).encode())
             elif args[0] == "OPEN":
                 myDir = "multi" #A mettre en place plus haut (instancier une seule fois)
@@ -59,8 +70,27 @@ class ClientThread(Thread):
                 if os.path.isfile(os.path.join(myDir, openFile)):
                     os.system("open {}/{}".format(myDir, openFile))
                     conn.send(b"opening")
+            elif args[0] == "LOGOUT": #Gestion de la deconnexion
+                self.manageConnexion()
             else:
-                print ("Echec action")
+                print("Echec action")
+
+    def updateTime(self):
+        for user in data_dict.keys():
+            if user == self.username:
+                print("Hello again")
+                print(data_dict[user]['lastCo'])
+                data_dict[user]['lastCo'] = time.time()
+                print("And now it's {}".format(data_dict[user]['lastCo']))
+
+    def manageConnexion(self):
+        for user in data_dict.keys():
+            if user == self.username:
+                print(data_dict[user]['connected'])
+                data_dict[user]['connected'] = not data_dict[user]['connected']
+                print("And now it's {}".format(data_dict[user]['connected']))
+#Fin ClientThread
+
 
 TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
@@ -74,7 +104,7 @@ threads = []
 
 while True:
     tcpsock.listen(4)
-    print ("Waiting for incoming connections...")
+    print("Waiting for incoming connections...")
     (conn, (ip, port)) = tcpsock.accept()
     newthread = ClientThread(ip, port)
     newthread.start()
