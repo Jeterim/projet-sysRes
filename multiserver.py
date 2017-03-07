@@ -3,7 +3,6 @@ import os
 import socket
 import time
 import hashlib
-import pyOpenSSL
 import ssl
 from threading import Thread
 #from SocketServer import ThreadingMixIn #Python 2
@@ -43,7 +42,7 @@ class ClientThread(Thread):
                     connstream.send(b"granted")
                 else:
                     connstream.send(b"forbidden")
-                connstream.send(data)  # echo
+                connstream.send(data.encode())  # echo
                 time.sleep(0.5)
             elif args[0] == "LS":
                 myDir = "multi"

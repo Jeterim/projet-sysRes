@@ -4,7 +4,6 @@ import socket
 import time
 import getpass
 import hashlib
-import pyOpenSSL
 import ssl 
 
 TCP_IP = '127.0.0.1'
