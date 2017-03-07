@@ -4,6 +4,8 @@ import socket
 import time
 import getpass
 import hashlib
+import pyOpenSSL
+import ssl 
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6262
@@ -11,9 +13,14 @@ BUFFER_SIZE = 2048
 MENU = {"LS":"Liste un repertoire", "MV":"Se deplacer dans un repertoire", "EXE":"Executer une commande"}
 
 def run():
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((TCP_IP, TCP_PORT))
+    
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.check_hostname = False
+    context.load_verify_locations("/etc/ssl/certs/cert.pem")
+    connstream = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+    connstream.connect((TCP_IP, TCP_PORT))
+    cert = connstream.getpeercert()
     print ("                    _ _           _ ")
     print (" _ __ ___   ___  __| (_) ___ __ _| |")
     print ("| '_ ` _ \ / _ \/ _` | |/ __/ _` | |")
@@ -34,9 +41,9 @@ def run():
         #try/except a faire
         print(pswdhash)
         #s.send("{};{}:{}".format("LOGIN", login, pswdhash))
-        s.send(bytes("{};{}:{}".format("LOGIN", login, pswdhash), 'utf-8'))
+        connstream.send(bytes("{};{}:{}".format("LOGIN", login, pswdhash), 'utf-8'))
         time.sleep(0.5)
-        data = s.recv(BUFFER_SIZE).decode('utf-8')
+        data = connstream.recv(BUFFER_SIZE).decode('utf-8')
         print ("Le serveur me donne : {}".format(data))
         if data == "granted":
             tentatives = 0
@@ -58,8 +65,8 @@ def run():
 
         if val == "LS":
             print ("Ls a faire")
-            s.send(b"LS;NULL")
-            data = s.recv(BUFFER_SIZE).decode()
+            connstream.send(b"LS;NULL")
+            data = connstream.recv(BUFFER_SIZE).decode()
             print ("Le serveur me donne : {}".format(data))
             listFileS = data.split(", ")
             for file in listFileS:
@@ -68,15 +75,15 @@ def run():
         elif val == "OPEN":
             print ("OPEN a faire")
             fileO = input("Fichier a ouvrir : ")
-            s.send("OPEN;{}".format(fileO).encode())
-            data = s.recv(BUFFER_SIZE).decode()
+            connstream.send("OPEN;{}".format(fileO).encode())
+            data = connstream.recv(BUFFER_SIZE).decode()
             print ("Le serveur me donne : {}".format(data))
         else:
             if val != "quit":
                 print ("Commande non reconnue")
 
     print ("Fin du client")
-    s.close()
+    connstream.close()
 
 if __name__ == "__main__":
     run()

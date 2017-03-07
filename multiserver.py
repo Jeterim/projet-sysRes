@@ -3,6 +3,8 @@ import os
 import socket
 import time
 import hashlib
+import pyOpenSSL
+import ssl
 from threading import Thread
 #from SocketServer import ThreadingMixIn #Python 2
 from socketserver import ThreadingMixIn #Python 3
@@ -21,7 +23,7 @@ class ClientThread(Thread):
 
     def run(self):
         while True:
-            data = conn.recv(2048).decode('utf-8')
+            data = connstream.recv(2048).decode('utf-8')
             if not data:
                 break
             print ("received data:", data)
@@ -38,10 +40,10 @@ class ClientThread(Thread):
                 if successauth == 1:
                     # Check proprement si le login/mdp est correct
                     # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
-                    conn.send(b"granted")
+                    connstream.send(b"granted")
                 else:
-                    conn.send(b"forbidden")
-                #conn.send(data)  # echo
+                    connstream.send(b"forbidden")
+                connstream.send(data)  # echo
                 time.sleep(0.5)
             elif args[0] == "LS":
                 myDir = "multi"
@@ -53,19 +55,22 @@ class ClientThread(Thread):
                         lsList.append("R;{}/".format(fileO))
 
                 print (lsList)
-                conn.send(", ".join(lsList).encode())
+                connstream.send(", ".join(lsList).encode())
             elif args[0] == "OPEN":
                 myDir = "multi" #A mettre en place plus haut (instancier une seule fois)
                 openFile = args[1]
                 if os.path.isfile(os.path.join(myDir, openFile)):
                     os.system("open {}/{}".format(myDir, openFile))
-                    conn.send(b"opening")
+                    connstream.send(b"opening")
             else:
                 print ("Echec action")
 
 TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
 BUFFER_SIZE = 2048  # Normally 1024, but we want fast response
+
+context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+context.load_cert_chain(certfile="/etc/ssl/certs/cert.pem", keyfile="key.pem")
 
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -77,6 +82,7 @@ while True:
     tcpsock.listen(4)
     print ("Waiting for incoming connections...")
     (conn, (ip, port)) = tcpsock.accept()
+    connstream = context.wrap_socket(conn,server_side=True)
     newthread = ClientThread(ip, port)
     newthread.start()
     threads.append(newthread)
