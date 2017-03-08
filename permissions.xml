@@ -18,6 +18,9 @@
         <role>
             <name>employee</name>
         </role>
+        <role>
+            <name>admin</name>
+        </role>
 
         <!-- People -->
 
@@ -32,6 +35,10 @@
         <role>
             <name>manager</name>
             <inheritFrom>employee</inheritFrom>
+        </role>
+        <role>
+            <name>johnA</name>
+            <inheritFrom>admin</inheritFrom>
         </role>
     </roleSet>
  
@@ -78,7 +85,7 @@
         <permission>
             <resources>
                 <resource>ressources</resource>
-                <resource>administration</resource>
+                <resource>financial</resource>
             </resources>
  
             <roles>
@@ -88,6 +95,24 @@
                 <privilege>r</privilege>
                 <privilege>w</privilege>
                 <privilege>x</privilege>
+            </privileges>
+        </permission>
+
+        <!--
+        - Setup permissions for specific actions 
+        -->
+        <permission>
+            <resources>
+                <resource>administration</resource>
+            </resources>
+ 
+            <roles>
+                <role>admin</role>
+            </roles>
+            <privileges>
+                <privilege>create</privilege>
+                <privilege>edit</privilege>
+                <privilege>delete</privilege>
             </privileges>
         </permission>
     </permissions>

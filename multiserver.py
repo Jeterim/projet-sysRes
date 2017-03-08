@@ -10,7 +10,7 @@ from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
 
-data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}};
+data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
 
 #Init Acl
 acli = acl.Acl()
@@ -24,6 +24,7 @@ class ClientThread(Thread):
         self.ip = ip
         self.port = port
         self.username = ""
+        self.role = ""
         print("[+] New thread started for "+ip+":"+str(port))
 
     def run(self):
@@ -37,6 +38,12 @@ class ClientThread(Thread):
             args = data.split(None)
             if args[0] == "LOGIN":
                 self.connect(args)
+            elif args[0] == "CREATE":
+                print("Mon nom c'est : {}".format(self.username))
+                if acli.check_access(self.username, 'administration', 'create'):
+                    print("Vous avez les acces pour creer une nouvelle personne")
+                    #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    conn.send(b"personne cree")
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
                 self.manageConnexion()
             else:
@@ -62,6 +69,7 @@ class ClientThread(Thread):
                 break
         if successauth == 1:
             self.username = user
+            self.role = data_dict[user]['role']
             self.updateTime()
             self.manageConnexion()
             # Check proprement si le login/mdp est correct

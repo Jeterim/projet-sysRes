@@ -52,6 +52,13 @@ def run():
     while val != "quit" and access == 1:
         print("-------------------\nTappez quit pour quitter le client\n")
         print(role)
+        if role == "admin":
+            print("Tu as des acces supplementaires")
+            time.sleep(.5)
+            s.send(b"CREATE test")
+            print("envoye")
+            data = s.recv(BUFFER_SIZE).decode()
+            print("Je recois {}".format(data))
         val = input("Tappez votre commande: > ")
         if val == "quit":
              #Gestion de la déconnexion
