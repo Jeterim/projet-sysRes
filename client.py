@@ -38,9 +38,11 @@ def run():
         time.sleep(0.5)
         data = s.recv(BUFFER_SIZE).decode('utf-8')
         print("Le serveur me donne : {}".format(data))
-        if data == "granted":
+        if "granted" in data:
             tentatives = 0
             access = 1
+            datae = data.split(';')
+            role = datae[1] #attribution du role pour des actions supplémentaires coté client
         else:
             tentatives = tentatives - 1
             print(
@@ -49,6 +51,7 @@ def run():
     val = ""
     while val != "quit" and access == 1:
         print("-------------------\nTappez quit pour quitter le client\n")
+        print(role)
         val = input("Tappez votre commande: > ")
         if val == "quit":
              #Gestion de la déconnexion

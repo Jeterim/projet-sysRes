@@ -67,7 +67,7 @@ class ClientThread(Thread):
             # Check proprement si le login/mdp est correct
             # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
             print(self.username)
-            conn.send(b"granted")
+            conn.send("granted;{}".format(data_dict[user]['role']).encode())
         else:
             conn.send(b"forbidden")
         # conn.send(data)  # echo
