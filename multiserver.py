@@ -9,8 +9,9 @@ from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
+import ssl
 
-data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
+data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}};
 
 #Init Acl
 acli = acl.Acl()
@@ -76,6 +77,7 @@ class ClientThread(Thread):
             # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
             print(self.username)
             conn.send("granted;{}".format(data_dict[user]['role']).encode())
+            conn.send(b"granted")
         else:
             conn.send(b"forbidden")
         # conn.send(data)  # echo
@@ -101,6 +103,9 @@ TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
 BUFFER_SIZE = 2048  # Normally 1024, but we want fast response
 
+context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+context.load_cert_chain(certfile="/etc/ssl/certs/cert.pem", keyfile="key.pem")
+
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -111,6 +116,8 @@ while True:
     tcpsock.listen(4)
     print("Waiting for incoming connections...")
     (conn, (ip, port)) = tcpsock.accept()
+    (connstream, (ip, port)) = tcpsock.accept()
+    conn = context.wrap_socket(connstream,server_side=True)
     newthread = ClientThread(ip, port)
     newthread.start()
     threads.append(newthread)

@@ -86,6 +86,7 @@
             <resources>
                 <resource>ressources</resource>
                 <resource>financial</resource>
+                <resource>administration</resource>
             </resources>
  
             <roles>
