@@ -56,10 +56,14 @@ class LoginApp(tk.Frame):
         ).pack()
 
     def log_in(self):
+        """
+        Authentification sur le serveur
+        """
         pswdhash = hashlib.sha1(self.passwd.get().encode('utf-8')).hexdigest()
         # try/except a faire
         print(pswdhash)
-        self.sock.send(bytes("{} {}:{}".format("LOGIN", self.user_id.get(), pswdhash), 'utf-8'))
+        self.sock.send(bytes("{} {}:{}".format(
+            "LOGIN", self.user_id.get(), pswdhash), 'utf-8'))
         time.sleep(0.5)
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print("Le serveur me donne : {}".format(data))
@@ -67,7 +71,14 @@ class LoginApp(tk.Frame):
             tentatives = 0
             access = 1
             datae = data.split(';')
-            role = datae[1] #attribution du role pour des actions supplémentaires coté client
+            # attribution du role pour des actions supplémentaires coté client
+            role = datae[1]
+            # Destroy window
+            app_app = tk.Tk()
+            app_app.title(" Dossier Medical")
+            app = MainApp(self.sock, master=app_app)
+            main_app.destroy()
+            app.mainloop()
         else:
             tentatives = tentatives - 1
             print(
@@ -75,6 +86,34 @@ class LoginApp(tk.Frame):
                 .format(tentatives))
 
 
+class MainApp(tk.Frame):
+    """
+    Frame principale de l'application
+    """
+    def __init__(self, sock, master=None):
+        super().__init__(master)
+        self.pack()
+        self.sock = sock
+        self.create_widgets()
+
+    def create_widgets(self):
+        """
+        Creation de l'interface graphique
+        """
+        self.login = tk.Button(self, text="list files",
+                               command=self.list_files).pack()
+
+    def list_files(self):
+        """
+        Test d'execution d'une commande sur le serveur
+        """
+        self.sock.send(b"ls")
+        time.sleep(0.5)
+        data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
+        print(data)
+
+
 main_app = tk.Tk()
+main_app.title("Login Dossier Medical")
 app = LoginApp(master=main_app)
 app.mainloop()
