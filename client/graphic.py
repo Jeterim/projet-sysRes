@@ -34,62 +34,55 @@ class LoginApp(tk.Frame):
         """
         self.login = tk.Button(
             self, text="Login", command=self.log_in).pack(side="bottom")
-
         self.lbl_id = ttk.Label(
             self,
-            text="Enter Doctor ID:",
-        ).pack()
-
+            text="Enter Doctor ID:").pack()
         self.user_id = tk.StringVar()
         self.ent_id = ttk.Entry(
             self,
-            textvariable=self.user_id,
-        ).pack()
-
+            textvariable=self.user_id).pack()
         self.lbl_passwd = ttk.Label(self, text="Enter password:").pack()
-
         self.passwd = tk.StringVar()
         self.ent_passwd = ttk.Entry(
             self,
             textvariable=self.passwd,
-            show="*"
-        ).pack()
+            show="*").pack()
 
     def log_in(self):
         """
         Authentification sur le serveur
         """
         pswdhash = hashlib.sha1(self.passwd.get().encode('utf-8')).hexdigest()
-        # try/except a faire
-        print(pswdhash)
         self.sock.send(bytes("{} {}:{}".format(
             "LOGIN", self.user_id.get(), pswdhash), 'utf-8'))
         time.sleep(0.5)
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
-        print("Le serveur me donne : {}".format(data))
         if "granted" in data:
-            tentatives = 0
-            access = 1
+            tentatives, access = 0, 1
             datae = data.split(';')
             # attribution du role pour des actions supplémentaires coté client
             role = datae[1]
             # Destroy window
-            app_app = tk.Tk()
-            app_app.title(" Dossier Medical")
-            app = MainApp(self.sock, master=app_app)
-            main_app.destroy()
-            app.mainloop()
+            self.change_window()
         else:
             tentatives = tentatives - 1
-            print(
-                "L'autentification a echouee il vous reste {} tentative(s)"
-                .format(tentatives))
+
+    def change_window(self):
+        """
+        Tue la fenetre de login et instancie la fenetre principale
+        """
+        app_app = tk.Tk()
+        app_app.title(" Dossier Medical")
+        app = MainApp(self.sock, master=app_app)
+        main_app.destroy()
+        app.mainloop()
 
 
 class MainApp(tk.Frame):
     """
     Frame principale de l'application
     """
+
     def __init__(self, sock, master=None):
         super().__init__(master)
         self.pack()
