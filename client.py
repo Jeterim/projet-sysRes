@@ -45,7 +45,7 @@ def run():
         time.sleep(0.5)
         data = s.recv(BUFFER_SIZE).decode('utf-8')
         print("Le serveur me donne : {}".format(data))
-        if data == "granted":
+        if "granted" in data:
             tentatives = 0
             access = 1
         else:
