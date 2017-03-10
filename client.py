@@ -14,13 +14,11 @@ MENU = {"": ""}
 
 
 def run():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(4)
-    s.connect((TCP_IP, TCP_PORT))
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
     context.verify_mode = ssl.CERT_REQUIRED
     context.check_hostname = False
-    context.load_verify_locations("/etc/ssl/certs/cert.pem")
+    context.load_verify_locations("cert.pem")
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     s.settimeout(4)
     s.connect((TCP_IP, TCP_PORT))

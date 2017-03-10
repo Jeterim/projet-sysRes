@@ -104,7 +104,7 @@ TCP_PORT = 6262
 BUFFER_SIZE = 2048  # Normally 1024, but we want fast response
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-context.load_cert_chain(certfile="/etc/ssl/certs/cert.pem", keyfile="key.pem")
+context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
 
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -115,7 +115,6 @@ threads = []
 while True:
     tcpsock.listen(4)
     print("Waiting for incoming connections...")
-    (conn, (ip, port)) = tcpsock.accept()
     (connstream, (ip, port)) = tcpsock.accept()
     conn = context.wrap_socket(connstream,server_side=True)
     newthread = ClientThread(ip, port)
