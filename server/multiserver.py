@@ -9,6 +9,7 @@ from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
+import shelve
 
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
 
@@ -29,6 +30,12 @@ class ClientThread(Thread):
 
     def run(self):
         print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
+        base = shelve.open('base', 'c')
+        base['foo'] = {'a': {'a1':'test','a2':'f'}, 'b': ['b1','b2']}
+        base.close()
+        base2 = shelve.open('base')
+        print(base2['foo']['a']['a1'])
+        base2.close()
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
