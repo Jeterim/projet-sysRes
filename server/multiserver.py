@@ -10,6 +10,7 @@ from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
 import shelve
+import records
 
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
 
@@ -30,10 +31,20 @@ class ClientThread(Thread):
 
     def run(self):
         print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
-        #base = shelve.open('base', 'c')
-        #base['john'] = {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}
-        #base['johnA'] = {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}
-        #base.close()
+
+        db = records.Database('sqlite:///users.db')
+
+        db.query('DROP TABLE IF EXISTS persons')
+        db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name text, password text, role text, lastCo text, connected bool)')
+
+        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False)
+        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key="2", name="johnA", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="admin", lastCo="1488482763.272476", connected=False)
+
+        rows = db.query('SELECT * FROM persons')
+        for _r in rows:
+            print(_r.key, _r.name, _r.role, _r.connected, not _r.connected)
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
@@ -42,7 +53,7 @@ class ClientThread(Thread):
 
             args = data.split(None)
             if args[0] == "LOGIN":
-                self.connect(args)
+                self.connect(args, db)
             elif args[0] == "CREATE":
                 print("Mon nom c'est : {}".format(self.username))
                 if acli.check_access(self.username, 'administration', 'create'):
@@ -50,9 +61,7 @@ class ClientThread(Thread):
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
                     conn.send(b"personne cree")
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
-                base2 = shelve.open('base')
-                self.manageConnexion(base2)
-                base2.close()
+                self.manageConnexion(db)
             else:
                 # TODO Check if dangerous command
                 run(args,
@@ -65,42 +74,43 @@ class ClientThread(Thread):
         print("{}; {}".format(out.decode('utf-8'), err))
         conn.send(out)
 
-    def connect(self, args):
+    def connect(self, args, db):
         auth = args[1].split(":")
         print("Login : {} Password : {}".format(auth[0], auth[1]))
-        successauth = 0
         base2 = shelve.open('base')
-        if auth[0] in base2 and base2[auth[0]]["password"] == auth[1]:
+        row = db.query('SELECT password, role FROM persons WHERE name="{}"'.format(auth[0])).first()
+        print("Ma requete me donne : {}".format(row))
+        #Trouver un moyen de savoir si ce nom existe avant la condition 
+        if row and row.password == auth[1]: #Authentifie
             print("it's him")
-            successauth = 1
-        if successauth == 1:
-            print("tg")
+            print(row.password, row.role)
             self.username = auth[0]
-            self.role = base2[auth[0]]["role"]
-            self.updateTime(base2)
-            print('et la')
-            self.manageConnexion(base2)
+            self.role = row.role
+            self.updateTime(db)
+            self.manageConnexion(db)
             # Check proprement si le login/mdp est correct
             # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
             print(self.username)
-            conn.send("granted;{}".format(base2[auth[0]]["role"]).encode())
+            conn.send("granted;{}".format(row.role).encode())
         else:
             conn.send(b"forbidden")
         # conn.send(data)  # echo
         time.sleep(0.5)
         base2.close()
 
-    def updateTime(self, base2):
-        if self.username in base2:
-            print(base2[self.username]["lastCo"])
-            base2[self.username]["lastCo"] = time.time()
-            print("And now it's {}".format(base2[self.username]["lastCo"]))
+    def updateTime(self, db):
+        row = db.query('SELECT lastCo FROM persons WHERE name="{}"'.format(self.username)).first()
+        print(row.lastCo)
+        db.query('UPDATE persons SET lastCo=:lastCo WHERE name=:name', lastCo=time.time(), name=self.username)
+        row = db.query('SELECT lastCo FROM persons WHERE name="{}"'.format(self.username)).first()
+        print("And now it's {}".format(row.lastCo))
 
-    def manageConnexion(self, base2):
-        if self.username in base2:
-            print(base2[self.username]["connected"])
-            base2[self.username]["connected"] = not base2[self.username]["connected"]
-            print("And now it's {}".format(base2[self.username]["connected"]))
+    def manageConnexion(self, db):
+        row = db.query('SELECT connected FROM persons WHERE name="{}"'.format(self.username)).first()
+        print(row.connected, not row.connected, type(not row.connected))
+        db.query('UPDATE persons SET connected=:connected WHERE name=:name', connected=not row.connected, name=self.username)
+        row = db.query('SELECT connected FROM persons WHERE name="{}"'.format(self.username)).first()
+        print("And now it's {} / {}".format(row.connected, type(row.connected)))
 
 
 TCP_IP = '0.0.0.0'
