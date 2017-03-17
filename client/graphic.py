@@ -116,7 +116,10 @@ class MainApp(tk.Frame):
         """
         self.login = tk.Button(self, text="list files",
                                command=self.list_files).pack(side="top")
-        self.list = ttk.Treeview(self).pack(side="left")
+        self.list = ttk.Treeview(self)
+        ysb = ttk.Scrollbar(self, orient='vertical', command=self.list.yview)
+        self.list.configure(yscroll=ysb.set)
+        self.list.pack(side="left")
         self.editor = tk.Text(self, wrap=tk.WORD)
         quote = """HAMLET: To be, or not to be--that is the question:
 Whether 'tis nobler in the mind to suffer
@@ -135,6 +138,16 @@ Devoutly to be wished."""
 
         self.editor.pack(fill=tk.Y)
         self.editor.config(yscrollcommand=self.scrollbar.set)
+        self.populate_tree_view()
+
+    def populate_tree_view(self):
+        """
+        Fill the tree-view with list fromt the server
+        """
+        file_list = self.list_files().split(None)
+        for file in file_list:
+            print(file)
+            self.list.insert("", 'end', text=file, open=False)
 
     def list_files(self):
         """
@@ -144,6 +157,7 @@ Devoutly to be wished."""
         time.sleep(0.5)  # Wait for answer from the server
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(data)
+        return data
 
 
 main_app = tk.Tk()
