@@ -33,7 +33,6 @@ class LoginApp(tk.Frame):
         self.sock = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
         self.sock.settimeout(4)
         self.sock.connect((TCP_IP, TCP_PORT))
-        cert = self.sock.getpeercert()
 
     def create_widgets(self):
         """
@@ -41,6 +40,7 @@ class LoginApp(tk.Frame):
         """
         self.login = tk.Button(
             self, text="Login", command=self.log_in).pack(side="bottom")
+        # Login label and field
         self.lbl_id = ttk.Label(
             self,
             text="Enter Doctor ID:").pack()
@@ -48,6 +48,7 @@ class LoginApp(tk.Frame):
         self.ent_id = ttk.Entry(
             self,
             textvariable=self.user_id).pack()
+        # Password label and field
         self.lbl_passwd = ttk.Label(self, text="Enter password:").pack()
         self.passwd = tk.StringVar()
         self.ent_passwd = ttk.Entry(
