@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<!--
+- This file configures the roles (user groups)
+- and permissions for accessing the system.
+-->
+<config>
+    <!--
+    - Setup roles here.
+    - Use the 'inheritFrom' tag to
+    - inherit permissions from another role.
+    -->
+    <roleSet>
+
+        <!-- Generic jobs -->
+        <role>
+            <name>doctor</name>
+        </role>
+        <role>
+            <name>employee</name>
+        </role>
+        <role>
+            <name>admin</name>
+        </role>
+
+        <!-- People -->
+
+        <role>
+            <name>cardio</name>
+            <inheritFrom>doctor</inheritFrom>
+        </role>
+        <role>
+            <name>john</name>
+            <inheritFrom>doctor</inheritFrom>
+        </role>
+        <role>
+            <name>manager</name>
+            <inheritFrom>employee</inheritFrom>
+        </role>
+        <role>
+            <name>johnA</name>
+            <inheritFrom>admin</inheritFrom>
+        </role>
+    </roleSet>
+ 
+    <!--
+    - Set permissions for accessing application components here.
+    - resource -> property being access controlled.
+    - role -> group or user that can access resource.
+    - privilege -> privilege that role can use with resource.
+    -
+    - Each permission tag can contain multiple
+    - resources, roles, and privileges.
+    -->
+    <permissions>
+        <permission>
+            <resources>
+                <resource>patients</resource>
+                <resource>ressources</resource>
+                <resource>general</resource>
+            </resources>
+            <roles>
+                <role>doctor</role>
+            </roles>
+            <privileges>
+                <privilege>r</privilege>
+                <privilege>w</privilege>
+                <privilege>x</privilege>
+            </privileges>
+        </permission>
+
+        <permission>
+            <resources>
+                <resource>cardiology</resource>
+            </resources>
+            <roles>
+                <role>cardio</role>
+            </roles>
+            <privileges>
+                <privilege>r</privilege>
+                <privilege>w</privilege>
+                <privilege>x</privilege>
+            </privileges>
+        </permission>
+ 
+        <permission>
+            <resources>
+                <resource>ressources</resource>
+                <resource>financial</resource>
+                <resource>administration</resource>
+            </resources>
+ 
+            <roles>
+                <role>employee</role>
+            </roles>
+            <privileges>
+                <privilege>r</privilege>
+                <privilege>w</privilege>
+                <privilege>x</privilege>
+            </privileges>
+        </permission>
+
+        <!--
+        - Setup permissions for specific actions 
+        -->
+        <permission>
+            <resources>
+                <resource>administration</resource>
+            </resources>
+ 
+            <roles>
+                <role>admin</role>
+            </roles>
+            <privileges>
+                <privilege>create</privilege>
+                <privilege>edit</privilege>
+                <privilege>delete</privilege>
+            </privileges>
+        </permission>
+    </permissions>
+</config>
