@@ -4,6 +4,7 @@ import socket
 import time
 import getpass
 import hashlib
+import ssl
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6262
@@ -12,9 +13,14 @@ MENU = {"": ""}
 
 
 def run():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.check_hostname = False
+    context.load_verify_locations("cert/cert.pem")
+    s = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     s.settimeout(4)
     s.connect((TCP_IP, TCP_PORT))
+    cert = s.getpeercert()
     print("                    _ _           _ ")
     print(" _ __ ___   ___  __| (_) ___ __ _| |")
     print("| '_ ` _ \ / _ \/ _` | |/ __/ _` | |")
