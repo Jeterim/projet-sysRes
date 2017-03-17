@@ -57,8 +57,17 @@ class LoginApp(tk.Frame):
         self.ent_passwd = ttk.Entry(
             self,
             textvariable=self.passwd,
-            show="*").pack()
+            show="*")
+        self.ent_passwd.pack(side="bottom")
+
+        self.bind_enter_key()
+
+    def bind_enter_key(self):
+        """
+        Bind the Return key to call the @log_in() method
+        """
         self.login.bind('<Return>', self.log_in)
+        self.ent_passwd.bind('<Return>', self.log_in)
 
     def log_in(self, event=None):
         """
