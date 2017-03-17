@@ -8,3 +8,7 @@ client/__pycache__/
 
 server/dist/
 server/build/
+client/dist/
+client/build/
+
+*.DS_Store
