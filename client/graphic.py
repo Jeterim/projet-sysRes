@@ -94,14 +94,33 @@ class MainApp(tk.Frame):
         Creation de l'interface graphique
         """
         self.login = tk.Button(self, text="list files",
-                               command=self.list_files).pack()
+                                command=self.list_files).pack(side="top")
+        self.list = ttk.Treeview(self).pack(side="left")
+        self.editor = tk.Text(self, wrap=tk.WORD)
+        quote = """HAMLET: To be, or not to be--that is the question:
+Whether 'tis nobler in the mind to suffer
+The slings and arrows of outrageous fortune
+Or to take arms against a sea of troubles
+And by opposing end them. To die, to sleep--
+No more--and by a sleep to say we end
+The heartache, and the thousand natural shocks
+That flesh is heir to. 'Tis a consummation
+Devoutly to be wished."""
+        self.editor.insert(tk.END, quote)
+        self.scrollbar = tk.Scrollbar(self)
+
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.scrollbar.config(command=self.editor.yview)
+
+        self.editor.pack(fill=tk.Y)
+        self.editor.config(yscrollcommand=self.scrollbar.set)
 
     def list_files(self):
         """
         Test d'execution d'une commande sur le serveur
         """
         self.sock.send(b"ls")
-        time.sleep(0.5)
+        time.sleep(0.5) # Wait for answer from the server
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(data)
 
