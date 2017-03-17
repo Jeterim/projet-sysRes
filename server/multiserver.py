@@ -51,16 +51,18 @@ class ClientThread(Thread):
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
                 self.manageConnexion()
             elif args[0] == "Graphique":
-                if args[1] == "modify":
-                    print("je suis la ")
-                    data = conn.recv(int(args[3]) + 1).decode('utf-8')
-                    print(data)
-                    with open(args[2], "w") as file:
-                        file.writelines(data)
-                    #self.execute_command("echo \"{}\" > {}".format(data, args[2]))
+                self.newmethod298(args)
             else:
                 # TODO Check if dangerous command
                 self.execute_command(args)
+
+    def newmethod298(self, args):
+        if args[1] == "modify":
+            print("je suis la ")
+            data = conn.recv(int(args[3]) + 1).decode('utf-8')
+            print(data)
+            with open(args[2], "w") as file:
+                file.writelines(data)
 
     def execute_command(self, args):
         """
