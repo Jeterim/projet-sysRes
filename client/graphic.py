@@ -29,8 +29,10 @@ class LoginApp(tk.Frame):
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = False
-        context.load_verify_locations( os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/cert.pem"))
-        self.sock = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+        context.load_verify_locations(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/cert.pem"))
+        self.sock = ssl.wrap_socket(socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM))
         self.sock.settimeout(4)
         self.sock.connect((TCP_IP, TCP_PORT))
 
@@ -39,7 +41,8 @@ class LoginApp(tk.Frame):
         Creation de l'interface graphique
         """
         self.login = tk.Button(
-            self, text="Login", command=self.log_in).pack(side="bottom")
+            self, text="Login", command=self.log_in)
+        self.login.pack(side="bottom")
         # Login label and field
         self.lbl_id = ttk.Label(
             self,
@@ -55,8 +58,9 @@ class LoginApp(tk.Frame):
             self,
             textvariable=self.passwd,
             show="*").pack()
+        self.login.bind('<Return>', self.log_in)
 
-    def log_in(self):
+    def log_in(self, event=None):
         """
         Authentification sur le serveur
         """
@@ -102,7 +106,7 @@ class MainApp(tk.Frame):
         Creation de l'interface graphique
         """
         self.login = tk.Button(self, text="list files",
-                                command=self.list_files).pack(side="top")
+                               command=self.list_files).pack(side="top")
         self.list = ttk.Treeview(self).pack(side="left")
         self.editor = tk.Text(self, wrap=tk.WORD)
         quote = """HAMLET: To be, or not to be--that is the question:
@@ -128,7 +132,7 @@ Devoutly to be wished."""
         Test d'execution d'une commande sur le serveur
         """
         self.sock.send(b"ls")
-        time.sleep(0.5) # Wait for answer from the server
+        time.sleep(0.5)  # Wait for answer from the server
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(data)
 
