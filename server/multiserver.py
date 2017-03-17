@@ -58,8 +58,10 @@ class ClientThread(Thread):
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
                     insert = args[1].split(':')
-                    db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(last_insert_rowid(), :name, :password, :role, :lastCo, :connected)',
-                    name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False)
+                    keycheck = db.query('SELECT MAX(key)+1 AS maxkey FROM persons').first()
+                    print(keycheck)
+                    db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key=keycheck.maxkey, name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False)
 
 
                     conn.send(b"personne cree")
