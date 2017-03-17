@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import socket
 import time
 import getpass
@@ -18,6 +18,7 @@ def run():
     context.verify_mode = ssl.CERT_REQUIRED
     context.check_hostname = False
     context.load_verify_locations( os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/cert.pem"))
+
     s = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     s.settimeout(4)
     s.connect((TCP_IP, TCP_PORT))
@@ -62,7 +63,14 @@ def run():
         if role == "admin":
             print("Tu as des acces supplementaires")
             time.sleep(.5)
-            s.send(b"CREATE test")
+            euname = input("# Login : ")
+            eupasswd = getpass.getpass("# Mot de passe : ")
+            eurole = input("# Role : ")
+            # hashage direct du passwd pour ne pas l'envoyer en clair
+            eupswdhash = hashlib.sha1(eupasswd.encode('utf-8')).hexdigest()
+            #s.send(bytes("CREATEUSR {}:{}:{}".format(nuname, nupswdhash, nurole), 'utf-8'))
+
+            s.send(bytes("EDITUSR {}:{}:{}".format(euname, eupswdhash, eurole), 'utf-8'))
             print("envoye")
             data = s.recv(BUFFER_SIZE).decode()
             print("Je recois {}".format(data))

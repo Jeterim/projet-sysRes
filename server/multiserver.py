@@ -9,6 +9,7 @@ from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
+import records
 import tempfile
 import ssl
 import tempfile
@@ -32,6 +33,15 @@ class ClientThread(Thread):
 
     def run(self):
         print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
+
+        db = records.Database('sqlite:///users.db')
+
+        #Si besoin de re-clean la bdd
+        #self.init_db(db)
+
+        rows = db.query('SELECT * FROM persons')
+        for _r in rows:
+            print(_r.key, _r.name, _r.role, _r.connected, not _r.connected)
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
@@ -41,22 +51,47 @@ class ClientThread(Thread):
             args = data.split(None)
             print(args)
             if args[0] == "LOGIN":
-                self.connect(args)
-            elif args[0] == "CREATE":
+                self.connect(args, db)
+            elif args[0] == "CREATEUSR":
                 print("Mon nom c'est : {}".format(self.username))
                 if acli.check_access(self.username, 'administration', 'create'):
                     print("Vous avez les acces pour creer une nouvelle personne")
+
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
-                    conn.send(b"personne cree")
+                    insert = args[1].split(':')
+
+                    if db.query('SELECT key FROM persons WHERE name="{}"'.format(insert[0])).first() == None:
+                        print("creation accepted")
+                        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(NULL, :name, :password, :role, :lastCo, :connected)',
+                            name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False)
+                        conn.send(b"personne cree")
+                    else:
+                        conn.send(b"echec creation")
+
+            elif args[0] == "EDITUSR":
+                print("Mon nom c'est : {}".format(self.username))
+                if acli.check_access(self.username, 'administration', 'edit'):
+                    print("Vous avez les acces pour editer une personne")
+
+                    #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    edit = args[1].split(':')
+                    if db.query('SELECT key FROM persons WHERE name="{}"'.format(edit[0])).first() != None:
+                        print("edition accepted")
+                        db.query('UPDATE persons SET password=:password, role=:role WHERE name=:name',
+                            password=edit[1], role=edit[2], name=edit[0])
+                        conn.send(b"personne updated")
+                    else:
+                        conn.send(b"echec update")
+
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
-                self.manageConnexion()
+                self.manageConnexion(db)
             elif args[0] == "Graphique":
-                self.newmethod298(args)
+                self.graphic_features(args)
             else:
                 # TODO Check if dangerous command
                 self.execute_command(args)
 
-    def newmethod298(self, args):
+    def graphic_features(self, args):
         if args[1] == "modify":
             print("je suis la ")
             data = conn.recv(int(args[3]) + 1).decode('utf-8')
@@ -77,48 +112,55 @@ class ClientThread(Thread):
         conn.send(temp_file.read().encode())
         temp_file.close()
 
+    def init_db(self, db):
+        db.query('DROP TABLE IF EXISTS persons')
+        db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name TEXT UNIQUE, password text, role text, lastCo text, connected bool)')
+
+        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False)
+        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key="2", name="johnA", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="admin", lastCo="1488482763.272476", connected=False)
+
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())
         print("{}; {}".format(out.decode('utf-8'), err))
         conn.send(out)
 
-    def connect(self, args):
+    def connect(self, args, db):
         auth = args[1].split(":")
         print("Login : {} Password : {}".format(auth[0], auth[1]))
-        successauth = 0
-        for user in data_dict:
-            if user == auth[0] and data_dict[user]["password"] == auth[1]:
-                print("it's him")
-                successauth = 1
-                break
-        if successauth == 1:
-            self.username = user
-            self.role = data_dict[user]['role']
-            self.updateTime()
-            self.manageConnexion()
+        row = db.query('SELECT password, role FROM persons WHERE name="{}"'.format(auth[0])).first()
+        print("Ma requete me donne : {}".format(row))
+        #Trouver un moyen de savoir si ce nom existe avant la condition 
+        if row and row.password == auth[1]: #Authentifie
+            print("it's him")
+            print(row.password, row.role)
+            self.username = auth[0]
+            self.role = row.role
+            self.updateTime(db)
+            self.manageConnexion(db)
             # Check proprement si le login/mdp est correct
             # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
             print(self.username)
-            conn.send("granted;{}".format(data_dict[user]['role']).encode())
+            conn.send("granted;{}".format(row.role).encode())
         else:
             conn.send(b"forbidden")
         # conn.send(data)  # echo
         time.sleep(0.5)
 
-    def updateTime(self):
-        for user in data_dict.keys():
-            if user == self.username:
-                print("Hello again")
-                print(data_dict[user]['lastCo'])
-                data_dict[user]['lastCo'] = time.time()
-                print("And now it's {}".format(data_dict[user]['lastCo']))
+    def updateTime(self, db):
+        row = db.query('SELECT lastCo FROM persons WHERE name="{}"'.format(self.username)).first()
+        print(row.lastCo)
+        db.query('UPDATE persons SET lastCo=:lastCo WHERE name=:name', lastCo=time.time(), name=self.username)
+        row = db.query('SELECT lastCo FROM persons WHERE name="{}"'.format(self.username)).first()
+        print("And now it's {}".format(row.lastCo))
 
-    def manageConnexion(self):
-        for user in data_dict.keys():
-            if user == self.username:
-                print(data_dict[user]['connected'])
-                data_dict[user]['connected'] = not data_dict[user]['connected']
-                print("And now it's {}".format(data_dict[user]['connected']))
+    def manageConnexion(self, db):
+        row = db.query('SELECT connected FROM persons WHERE name="{}"'.format(self.username)).first()
+        print(row.connected, not row.connected, type(not row.connected))
+        db.query('UPDATE persons SET connected=:connected WHERE name=:name', connected=not row.connected, name=self.username)
+        row = db.query('SELECT connected FROM persons WHERE name="{}"'.format(self.username)).first()
+        print("And now it's {} / {}".format(row.connected, type(row.connected)))
 
 
 TCP_IP = '0.0.0.0'
