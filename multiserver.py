@@ -9,6 +9,7 @@ from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
+import tempfile
 import ssl
 
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}};
@@ -42,10 +43,14 @@ class ClientThread(Thread):
                 self.manageConnexion()
             else:
                 # TODO Check if dangerous command
+                g = tempfile.TemporaryFile(mode='w+')
                 run(args,
-                    stdout=conn.makefile('w'),
+                    stdout=g,
                     stdin=conn.makefile('r'),
-                    stderr=conn.makefile('w'))
+                    stderr=g)
+                g.seek(0)
+                conn.send(g.read().encode())
+                g.close()
 
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())
@@ -95,7 +100,7 @@ TCP_PORT = 6262
 BUFFER_SIZE = 2048  # Normally 1024, but we want fast response
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-context.load_cert_chain(certfile="/etc/ssl/certs/cert.pem", keyfile="key.pem")
+context.load_cert_chain(certfile="cert/cert.pem", keyfile="cert/key.pem")
 
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
