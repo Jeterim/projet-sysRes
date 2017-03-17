@@ -9,6 +9,7 @@ from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
+import tempfile
 import ssl
 import tempfile
 
@@ -53,6 +54,7 @@ class ClientThread(Thread):
                 g = tempfile.TemporaryFile(mode='w+')
                 run(args,
                     stdout=g,
+                    stdin=conn.makefile('r'),
                     stderr=g)
                 g.seek(0)
                 conn.send(g.read().encode())

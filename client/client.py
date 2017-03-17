@@ -17,8 +17,7 @@ def run():
     context.verify_mode = ssl.CERT_REQUIRED
     context.check_hostname = False
     context.load_verify_locations("cert/cert.pem")
-
-    s = context.wrap_socket(socket.socket(socket.AF_INET,socket.SOCK_STREAM),server_hostname="toto")
+    s = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     s.settimeout(4)
     s.connect((TCP_IP, TCP_PORT))
     cert = s.getpeercert()
