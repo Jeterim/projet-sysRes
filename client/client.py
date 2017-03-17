@@ -5,6 +5,7 @@ import time
 import getpass
 import hashlib
 import ssl
+import os
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6262
@@ -16,8 +17,8 @@ def run():
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
     context.verify_mode = ssl.CERT_REQUIRED
     context.check_hostname = False
-    context.load_verify_locations(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/cert.pem"))
+    context.load_verify_locations( os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/cert.pem"))
+
     s = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     s.settimeout(4)
     s.connect((TCP_IP, TCP_PORT))
