@@ -51,20 +51,36 @@ class ClientThread(Thread):
             args = data.split(None)
             if args[0] == "LOGIN":
                 self.connect(args, db)
-            elif args[0] == "CREATE":
+            elif args[0] == "CREATEUSR":
                 print("Mon nom c'est : {}".format(self.username))
                 if acli.check_access(self.username, 'administration', 'create'):
                     print("Vous avez les acces pour creer une nouvelle personne")
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
                     insert = args[1].split(':')
-                    keycheck = db.query('SELECT MAX(key)+1 AS maxkey FROM persons').first()
-                    print(keycheck)
-                    db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
-                    key=keycheck.maxkey, name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False)
 
+                    if db.query('SELECT key FROM persons WHERE name="{}"'.format(insert[0])).first() == None:
+                        print("creation accepted")
+                        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(NULL, :name, :password, :role, :lastCo, :connected)',
+                            name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False)
+                        conn.send(b"personne cree")
+                    else:
+                        conn.send(b"echec creation")
 
-                    conn.send(b"personne cree")
+            elif args[0] == "EDITUSR":
+                print("Mon nom c'est : {}".format(self.username))
+                if acli.check_access(self.username, 'administration', 'edit'):
+                    print("Vous avez les acces pour editer une personne")
+
+                    #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    edit = args[1].split(':')
+                    if db.query('SELECT key FROM persons WHERE name="{}"'.format(edit[0])).first() != None:
+                        print("edition accepted")
+                        db.query('UPDATE persons SET password=:password, role=:role WHERE name=:name',
+                            password=edit[1], role=edit[2], name=edit[0])
+                        conn.send(b"personne updated")
+                    else:
+                        conn.send(b"echec update")
 
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
                 self.manageConnexion(db)
@@ -81,7 +97,7 @@ class ClientThread(Thread):
 
     def init_db(self, db):
         db.query('DROP TABLE IF EXISTS persons')
-        db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name text, password text, role text, lastCo text, connected bool)')
+        db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name TEXT UNIQUE, password text, role text, lastCo text, connected bool)')
 
         db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
                     key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False)
