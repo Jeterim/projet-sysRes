@@ -39,6 +39,7 @@ class ClientThread(Thread):
             print("received data:", data)
 
             args = data.split(None)
+            print(args)
             if args[0] == "LOGIN":
                 self.connect(args)
             elif args[0] == "CREATE":
@@ -49,16 +50,30 @@ class ClientThread(Thread):
                     conn.send(b"personne cree")
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
                 self.manageConnexion()
+            elif args[0] == "Graphique":
+                if args[1] == "modify":
+                    print("je suis la ")
+                    data = conn.recv(int(args[3]) + 1).decode('utf-8')
+                    print(data)
+                    with open(args[2], "w") as file:
+                        file.writelines(data)
+                    #self.execute_command("echo \"{}\" > {}".format(data, args[2]))
             else:
                 # TODO Check if dangerous command
-                g = tempfile.TemporaryFile(mode='w+')
-                run(args,
-                    stdout=g,
-                    stdin=conn.makefile('r'),
-                    stderr=g)
-                g.seek(0)
-                conn.send(g.read().encode())
-                g.close()
+                self.execute_command(args)
+
+    def execute_command(self, args):
+        """
+        Execute a command from the client on the server and send output to client
+        """
+        temp_file = tempfile.TemporaryFile(mode='w+')
+        run(args,
+            stdout=temp_file,
+            stdin=conn.makefile('r'),
+            stderr=temp_file)
+        temp_file.seek(0)
+        conn.send(temp_file.read().encode())
+        temp_file.close()
 
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())

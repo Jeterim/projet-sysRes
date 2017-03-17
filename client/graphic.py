@@ -120,25 +120,30 @@ class MainApp(tk.Frame):
         ysb = ttk.Scrollbar(self, orient='vertical', command=self.list.yview)
         self.list.configure(yscroll=ysb.set)
         self.list.pack(side="left")
-        self.editor = tk.Text(self, wrap=tk.WORD)
-        quote = """HAMLET: To be, or not to be--that is the question:
-Whether 'tis nobler in the mind to suffer
-The slings and arrows of outrageous fortune
-Or to take arms against a sea of troubles
-And by opposing end them. To die, to sleep--
-No more--and by a sleep to say we end
-The heartache, and the thousand natural shocks
-That flesh is heir to. 'Tis a consummation
-Devoutly to be wished."""
-        self.editor.insert(tk.END, quote)
-        self.scrollbar = tk.Scrollbar(self)
 
+        self.editor = tk.Text(self, wrap=tk.WORD)
+        self.editor.insert(tk.END, "Empty text")
+
+        self.scrollbar = tk.Scrollbar(self)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.scrollbar.config(command=self.editor.yview)
 
         self.editor.pack(fill=tk.Y)
         self.editor.config(yscrollcommand=self.scrollbar.set)
         self.populate_tree_view()
+        self.list.bind('<ButtonRelease-1>', self.update_editor)
+
+        self.save_button = tk.Button(self, text="Save file",
+                                     command=self.save_file).pack(side="bottom")
+
+    def save_file(self):
+        file_content = self.editor.get("0.0", tk.END)
+        print(file_content)
+        item_dic = self.get_selected_item(None)
+        self.sock.send("Graphique modify {} {}".format(item_dic["text"], len(file_content)).encode())
+        time.sleep(0.5)
+        self.sock.send(file_content.encode())
+
 
     def populate_tree_view(self):
         """
@@ -148,6 +153,41 @@ Devoutly to be wished."""
         for file in file_list:
             print(file)
             self.list.insert("", 'end', text=file, open=False)
+
+    def update_editor(self, event):
+        """
+        Update the text editor whenever another item is selected in the tree view UI
+        """
+        self.editor.replace("0.0", tk.END, self.get_text_for_item(
+            self.get_selected_item(event)))
+
+    def get_selected_item(self, event):
+        """
+        Return the selected item in the tree-view
+        """
+        current_item = self.list.focus()
+        return self.list.item(current_item)
+
+    def get_text_for_item(self, item_dic):
+        """
+        Return the content of a selected item from the tree view UI.
+        """
+        command = "cat {}".format(item_dic["text"])
+        self.sock.send(command.encode())
+        time.sleep(0.5)
+        recvd = ""
+        while True:
+            try:
+                data = self.sock.recv(BUFFER_SIZE).decode()
+            except socket.timeout:
+                return recvd
+            recvd += data
+
+        # data = self.sock.recv(BUFFER_SIZE).decode()
+        # while data:
+        #     data = self.sock.recv(BUFFER_SIZE).decode()
+        #     recvd += data
+        return recvd
 
     def list_files(self):
         """
