@@ -55,7 +55,7 @@ def run():
         if role == "admin":
             print("Tu as des acces supplementaires")
             time.sleep(.5)
-            s.send(b"CREATE test")
+            s.send(b"CREATE test:d6b4e84ee7f31d88617a6b60421451272ebf1a3a:employee")
             print("envoye")
             data = s.recv(BUFFER_SIZE).decode()
             print("Je recois {}".format(data))

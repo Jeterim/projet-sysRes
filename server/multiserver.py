@@ -9,7 +9,6 @@ from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
 import shlex
-import shelve
 import records
 
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
@@ -34,13 +33,8 @@ class ClientThread(Thread):
 
         db = records.Database('sqlite:///users.db')
 
-        db.query('DROP TABLE IF EXISTS persons')
-        db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name text, password text, role text, lastCo text, connected bool)')
-
-        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
-                    key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False)
-        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
-                    key="2", name="johnA", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="admin", lastCo="1488482763.272476", connected=False)
+        #Si besoin de re-clean la bdd
+        #self.init_db(db)
 
         rows = db.query('SELECT * FROM persons')
         for _r in rows:
@@ -58,8 +52,15 @@ class ClientThread(Thread):
                 print("Mon nom c'est : {}".format(self.username))
                 if acli.check_access(self.username, 'administration', 'create'):
                     print("Vous avez les acces pour creer une nouvelle personne")
+
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    insert = args[1].split(':')
+                    db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(last_insert_rowid(), :name, :password, :role, :lastCo, :connected)',
+                    name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False)
+
+
                     conn.send(b"personne cree")
+
             elif args[0] == "LOGOUT": #Gestion de la deconnexion
                 self.manageConnexion(db)
             else:
@@ -69,6 +70,15 @@ class ClientThread(Thread):
                     stdin=conn.makefile('r'),
                     stderr=conn.makefile('w'))
 
+    def init_db(self, db):
+        db.query('DROP TABLE IF EXISTS persons')
+        db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name text, password text, role text, lastCo text, connected bool)')
+
+        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False)
+        db.query('INSERT INTO persons (key, name, password, role, lastCo, connected) VALUES(:key, :name, :password, :role, :lastCo, :connected)',
+                    key="2", name="johnA", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="admin", lastCo="1488482763.272476", connected=False)
+
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())
         print("{}; {}".format(out.decode('utf-8'), err))
@@ -77,7 +87,6 @@ class ClientThread(Thread):
     def connect(self, args, db):
         auth = args[1].split(":")
         print("Login : {} Password : {}".format(auth[0], auth[1]))
-        base2 = shelve.open('base')
         row = db.query('SELECT password, role FROM persons WHERE name="{}"'.format(auth[0])).first()
         print("Ma requete me donne : {}".format(row))
         #Trouver un moyen de savoir si ce nom existe avant la condition 
@@ -96,7 +105,6 @@ class ClientThread(Thread):
             conn.send(b"forbidden")
         # conn.send(data)  # echo
         time.sleep(0.5)
-        base2.close()
 
     def updateTime(self, db):
         row = db.query('SELECT lastCo FROM persons WHERE name="{}"'.format(self.username)).first()
