@@ -3,6 +3,8 @@ from tkinter import ttk
 import socket
 import hashlib
 import time
+import ssl
+import os
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6262
@@ -24,9 +26,14 @@ class LoginApp(tk.Frame):
         """
         Methode de connection au serveur
         """
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = False
+        context.load_verify_locations( os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/cert.pem"))
+        self.sock = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
         self.sock.settimeout(4)
         self.sock.connect((TCP_IP, TCP_PORT))
+        cert = self.sock.getpeercert()
 
     def create_widgets(self):
         """
@@ -60,7 +67,7 @@ class LoginApp(tk.Frame):
         if "granted" in data:
             tentatives, access = 0, 1
             datae = data.split(';')
-            # attribution du role pour des actions supplémentaires coté client
+            # attribution du role pour des actions supplementaires cote client
             role = datae[1]
             # Destroy window
             self.change_window()
