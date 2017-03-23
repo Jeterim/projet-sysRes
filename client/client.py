@@ -62,15 +62,33 @@ def run():
         print(role)
         if role == "admin":
             print("Tu as des acces supplementaires")
+            print("Tu peux ajouter un nouvel utlisateur (N), Modifier un utilisateur (E), ou supprimer un utilisateur (D)\n")
+            action = input("Action > ")
             time.sleep(.5)
-            euname = input("# Login : ")
-            eupasswd = getpass.getpass("# Mot de passe : ")
-            eurole = input("# Role : ")
-            # hashage direct du passwd pour ne pas l'envoyer en clair
-            eupswdhash = hashlib.sha1(eupasswd.encode('utf-8')).hexdigest()
-            #s.send(bytes("CREATEUSR {}:{}:{}".format(nuname, nupswdhash, nurole), 'utf-8'))
+            if action == "N":
+                nuname = input("# Login : ")
+                nupasswd = getpass.getpass("# Mot de passe : ")
+                nurole = input("# Role : ")
+                # hashage direct du passwd pour ne pas l'envoyer en clair
+                nupswdhash = hashlib.sha1(nupasswd.encode('utf-8')).hexdigest()
+                s.send(bytes("CREATEUSR {}:{}:{}".format(nuname, nupswdhash, nurole), 'utf-8'))
 
-            s.send(bytes("EDITUSR {}:{}:{}".format(euname, eupswdhash, eurole), 'utf-8'))
+            elif action == "E":
+                euname = input("# Login : ")
+                eupasswd = getpass.getpass("# Mot de passe : ")
+                eurole = input("# Role : ")
+                # hashage direct du passwd pour ne pas l'envoyer en clair
+                eupswdhash = hashlib.sha1(eupasswd.encode('utf-8')).hexdigest()
+                #s.send(bytes("CREATEUSR {}:{}:{}".format(nuname, nupswdhash, nurole), 'utf-8'))
+
+                s.send(bytes("EDITUSR {}:{}:{}".format(euname, eupswdhash, eurole), 'utf-8'))
+
+            elif action == "D":
+                delname = input("# Login : ")
+                s.send(bytes("DELUSR {}".format(delname), 'utf-8'))
+            else :
+                s.send(bytes("NULLUSR NULL", 'utf-8'))
+
             print("envoye")
             data = s.recv(BUFFER_SIZE).decode()
             print("Je recois {}".format(data))
