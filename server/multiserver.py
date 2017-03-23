@@ -14,11 +14,27 @@ import tempfile
 import ssl
 import tempfile
 
+import miracle
+
 data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
 
 #Init Acl
-acli = acl.Acl()
-acli.build_acl('permissions.xml')
+#acli = acl.Acl()
+#acli.build_acl('permissions.xml')
+acl = miracle.Acl()
+acl.add_roles(['admin', 'doctor', 'employee'])
+acl.add({
+    'general': {'r', 'w', 'x'},
+    'adminAction': {'create', 'update', 'delete'},
+})
+print(acl.check('admin', 'adminAction', 'update'))
+acl.grant('admin', 'adminAction', 'update')
+print(acl.check('admin', 'adminAction', 'update'))
+
+save = acl.__getstate__()
+print(save)
+
+
 
 
 class ClientThread(Thread):
@@ -82,7 +98,7 @@ class ClientThread(Thread):
                         conn.send(b"personne updated")
                     else:
                         conn.send(b"echec update")
-            
+
             elif args[0] == "DELUSR":
                 print("Mon nom c'est : {}".format(self.username))
                 if acli.check_access(self.username, 'administration', 'delete'):
