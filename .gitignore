@@ -5,3 +5,10 @@ __pycache__/
 
 server/__pycache__/
 client/__pycache__/
+
+server/dist/
+server/build/
+client/dist/
+client/build/
+
+*.DS_Store

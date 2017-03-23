@@ -25,11 +25,13 @@ acl = miracle.Acl()
 acl.add_roles(['admin', 'doctor', 'employee'])
 acl.add({
     'general': {'r', 'w', 'x'},
-    'adminAction': {'create', 'update', 'delete'},
+    'adminAction': {'create', 'edit', 'delete'},
 })
-print(acl.check('admin', 'adminAction', 'update'))
-acl.grant('admin', 'adminAction', 'update')
-print(acl.check('admin', 'adminAction', 'update'))
+print(acl.check('admin', 'adminAction', 'edit'))
+acl.grant('admin', 'adminAction', 'create')
+acl.grant('admin', 'adminAction', 'edit')
+acl.grant('admin', 'adminAction', 'delete')
+print(acl.check('admin', 'adminAction', 'edit'))
 
 save = acl.__getstate__()
 print(save)
@@ -48,8 +50,6 @@ class ClientThread(Thread):
         print("[+] New thread started for "+ip+":"+str(port))
 
     def run(self):
-        print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
-
         db = records.Database('sqlite:///users.db')
 
         #Si besoin de re-clean la bdd
@@ -70,7 +70,7 @@ class ClientThread(Thread):
                 self.connect(args, db)
             elif args[0] == "CREATEUSR":
                 print("Mon nom c'est : {}".format(self.username))
-                if acli.check_access(self.username, 'administration', 'create'):
+                if acl.check(self.role, 'adminAction', 'create'):
                     print("Vous avez les acces pour creer une nouvelle personne")
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
@@ -86,7 +86,9 @@ class ClientThread(Thread):
 
             elif args[0] == "EDITUSR":
                 print("Mon nom c'est : {}".format(self.username))
-                if acli.check_access(self.username, 'administration', 'edit'):
+                print(self.role, acl.check(self.role, 'adminAction', 'edit'))
+                print(acl.get_roles())
+                if acl.check(self.role, 'adminAction', 'edit'):
                     print("Vous avez les acces pour editer une personne")
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
@@ -101,7 +103,7 @@ class ClientThread(Thread):
 
             elif args[0] == "DELUSR":
                 print("Mon nom c'est : {}".format(self.username))
-                if acli.check_access(self.username, 'administration', 'delete'):
+                if acl.check(self.role, 'adminAction', 'delete'):
                     print("Vous avez les acces pour supprimer une personne")
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
