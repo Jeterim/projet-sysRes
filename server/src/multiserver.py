@@ -109,7 +109,9 @@ class ClientThread(Thread):
         if args[1] == "modify":
             data = conn.recv(int(args[3]) + 1).decode('utf-8') # Recoit le fichier
             print(data)
-            with open(args[2], "w") as file:
+            path = "{}/{}".format(self.current_dir, args[2])
+            print(path)
+            with open(path, "w") as file:
                 file.writelines(data)
         elif args[1] == "print":
             path = "{}/{}".format(self.current_dir, args[2])
