@@ -30,11 +30,24 @@ class ClientThread(Thread):
         self.username = ""
         self.role = ""
         print("[+] New thread started for "+ip+":"+str(port))
+        # Temporary
+        self.original_dir = os.getcwd()
+        self.current_dir = os.path.abspath('general')
+        self.has_changed_dir = False
+
+    def update_dir(self):
+        if self.original_dir != self.current_dir:
+            os.chdir(self.original_dir)
+        self.has_changed_dir = False
 
     def run(self):
         print("test acces : {}".format(acli.check_access('john', 'general', 'w')))
 
         db = records.Database('sqlite:///users.db')
+        # if self.has_changed_dir == 0:
+        #     os.chdir('general')
+        #     self.has_changed_dir = 1
+
 
         #Si besoin de re-clean la bdd
         #self.init_db(db)
@@ -92,12 +105,47 @@ class ClientThread(Thread):
                 self.execute_command(args)
 
     def graphic_features(self, args):
+        """ treat what is send from the graphic client """
         if args[1] == "modify":
-            print("je suis la ")
-            data = conn.recv(int(args[3]) + 1).decode('utf-8')
+            data = conn.recv(int(args[3]) + 1).decode('utf-8') # Recoit le fichier
             print(data)
             with open(args[2], "w") as file:
                 file.writelines(data)
+        elif args[1] == "print":
+            path = "{}/{}".format(self.current_dir, args[2])
+            if os.path.isdir(path):
+                self.current_dir = path
+                conn.send(b"Directory")
+            else:
+                try:
+                    with open(path, 'r') as file:
+                        self.send_file(file)
+                except FileNotFoundError:
+                    conn.send(b"NotFound")
+        elif args[1] == "ls":
+            self.list_dir()
+        elif args[1] == "chdir":
+            if args[2] != "..":
+                self.current_dir = os.path.abspath(args[2])
+            else:
+                self.current_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir))
+
+    def list_dir(self):
+        print("PATH : {}".format(self.current_dir))
+        file_list = os.listdir(self.current_dir)
+        conn.send(",".join(file_list).encode())
+
+    def send_file(self, file):
+        """ Take a file and send it through the socket"""
+        file.seek(0, 2) # Seek end of file
+        length = file.tell()
+        print(length)
+        conn.send(str(length).encode())
+        time.sleep(0.5)
+        file.seek(0, 0)
+        content = file.read()
+        print(content)
+        conn.send(str(content).encode())
 
     def execute_command(self, args):
         """

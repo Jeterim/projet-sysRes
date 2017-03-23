@@ -136,6 +136,8 @@ class MainApp(tk.Frame):
         self.save_button = tk.Button(self, text="Save file",
                                      command=self.save_file).pack(side="bottom")
 
+        self.back_button = tk.Button(self, text="retour", command=self.get_back).pack()
+
     def save_file(self):
         file_content = self.editor.get("0.0", tk.END)
         print(file_content)
@@ -144,12 +146,17 @@ class MainApp(tk.Frame):
         time.sleep(0.5)
         self.sock.send(file_content.encode())
 
+    def get_back(self):
+        self.sock.send("Graphique chdir ..".encode())
+        time.sleep(0.3)
+        self.populate_tree_view()
 
     def populate_tree_view(self):
         """
         Fill the tree-view with list fromt the server
         """
-        file_list = self.list_files().split(None)
+        self.list.delete(*self.list.get_children())
+        file_list = self.list_files()
         for file in file_list:
             print(file)
             self.list.insert("", 'end', text=file, open=False)
@@ -158,8 +165,9 @@ class MainApp(tk.Frame):
         """
         Update the text editor whenever another item is selected in the tree view UI
         """
-        self.editor.replace("0.0", tk.END, self.get_text_for_item(
-            self.get_selected_item(event)))
+        content = self.get_text_for_item(self.get_selected_item(event))
+        if content != "NotFound":
+            self.editor.replace("0.0", tk.END, content)
 
     def get_selected_item(self, event):
         """
@@ -172,32 +180,29 @@ class MainApp(tk.Frame):
         """
         Return the content of a selected item from the tree view UI.
         """
-        command = "cat {}".format(item_dic["text"])
-        self.sock.send(command.encode())
-        time.sleep(0.5)
-        recvd = ""
-        while True:
-            try:
-                data = self.sock.recv(BUFFER_SIZE).decode()
-            except socket.timeout:
-                return recvd
-            recvd += data
-
-        # data = self.sock.recv(BUFFER_SIZE).decode()
-        # while data:
-        #     data = self.sock.recv(BUFFER_SIZE).decode()
-        #     recvd += data
-        return recvd
+        self.sock.send("Graphique print {}".format(item_dic["text"]).encode())
+        size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
+        print(size_of_file)
+        if size_of_file == "Directory":
+            self.populate_tree_view()
+        else:
+            content = self.sock.recv(int(size_of_file)).decode('utf-8')
+            print(content)
+            return content
 
     def list_files(self):
         """
         Test d'execution d'une commande sur le serveur
         """
-        self.sock.send(b"ls")
-        time.sleep(0.5)  # Wait for answer from the server
+        self.sock.send(b"Graphique ls")
+        # time.sleep(0.5)  # Wait for answer from the server
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(data)
-        return data
+        formatted_list = data.split(',')
+        return formatted_list
+
+    def change_directory(self, change_directory):
+        self.sock.send(b"Graphique chdir")
 
 
 main_app = tk.Tk()
