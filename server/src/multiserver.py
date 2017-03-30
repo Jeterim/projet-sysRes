@@ -13,31 +13,45 @@ import records
 import tempfile
 import ssl
 import tempfile
-
-import miracle
-
-data_dict = {"john" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected":False}, "johnA" : {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected":False}};
+import ast
 
 #Init Acl
-#acli = acl.Acl()
-#acli.build_acl('permissions.xml')
-acl = miracle.Acl()
-acl.add_roles(['admin', 'doctor', 'employee'])
-acl.add({
-    'general': {'r', 'w', 'x'},
-    'adminAction': {'create', 'edit', 'delete'},
+acl = acl.Acl()
+
+# Ouverture sauvegarde des acl
+with open('sauvAcl.json', "r") as file:
+    content = file.read()
+    user = {}
+    user = ast.literal_eval(content)
+
+    acl.__setstate__(user)
+
+
+
+# initAcl() # Si on a besoin d'un reset d'acl
+# saveAcl() # Sauvegarde pour les changements importants
+
+def saveAcl():
+    save = acl.__getstate__()
+    print(save)
+    with open('sauvAcl.json', "w") as file:
+        file.write(str(save))
+
+def initAcl():
+    acl.add_roles(['admin', 'doctor', 'employee'])
+    acl.add({
+        'general': {'r', 'w', 'x'},
+        'adminAction': {'create', 'edit', 'delete'},
+    })
+
+    acl.grants({
+    'admin': {
+        'adminAction': ['create', 'edit', 'delete'],
+    },
+    'doctor': {
+        'general': ['x']
+    }
 })
-print(acl.check('admin', 'adminAction', 'edit'))
-acl.grant('admin', 'adminAction', 'create')
-acl.grant('admin', 'adminAction', 'edit')
-acl.grant('admin', 'adminAction', 'delete')
-print(acl.check('admin', 'adminAction', 'edit'))
-
-save = acl.__getstate__()
-print(save)
-
-
-
 
 class ClientThread(Thread):
 
@@ -100,6 +114,7 @@ class ClientThread(Thread):
             elif args[0] == "EDITUSR":
                 print("Mon nom c'est : {}".format(self.username))
                 print(self.role, acl.check(self.role, 'adminAction', 'edit'))
+
                 print(acl.get_roles())
                 if acl.check(self.role, 'adminAction', 'edit'):
                     print("Vous avez les acces pour editer une personne")
@@ -225,6 +240,7 @@ class ClientThread(Thread):
             # Check proprement si le login/mdp est correct
             # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
             print(self.username)
+            print(self.role, acl.check(self.role, 'general', 'r'))
             conn.send("granted;{}".format(row.role).encode())
         else:
             conn.send(b"forbidden")

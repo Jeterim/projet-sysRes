@@ -157,6 +157,13 @@ class Acl(object):
         """
         return set(self._structure.keys())
 
+    def get_grants(self):
+        """ Get the set of grants.
+
+        :rtype: set(str)
+        """
+        return set(self._grants)
+
     def get_permissions(self, resource):
         """ Get the set of permissions on a resource
 
@@ -431,6 +438,23 @@ class Acl(object):
             ret[role][resource].add(permission)
         return dict(ret)
 
+    def show2(self):
+        """ Show all current grants
+
+            Returns: { role: { resource: set(permission) } }
+
+        :rtype: dict(dict(set(str))
+        """
+        ret = {}
+        for (role, resource, permission) in self._grants:
+            print(permission)
+            if not role in ret:
+                ret[role] = {}
+            if not resource in ret[role]:
+                ret[role][resource] = set()
+            ret[role][resource].add(permission)
+        return ret
+
     #endregion
 
     #region Export & Import
@@ -439,7 +463,7 @@ class Acl(object):
         return {
             'roles': self.get_roles(),
             'struct': self.get(),
-            'grants': self.show()
+            'grants': self.show2()
         }
 
     def __setstate__(self, state):

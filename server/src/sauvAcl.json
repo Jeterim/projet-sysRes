@@ -1,0 +1,1 @@
+{'roles': {'admin', 'employee', 'doctor'}, 'struct': {'general': {'x', 'r', 'w'}, 'adminAction': {'delete', 'edit', 'create'}}, 'grants': {'admin': {'adminAction': {'delete', 'edit', 'create'}}, 'doctor': {'general': {'x'}}}}
