@@ -135,15 +135,16 @@ class ClientThread(Thread):
             else:
                 tmp_dir = os.path.abspath(
                     os.path.join(self.current_dir, os.pardir))
-                print(tmp_dir)
                 if len(tmp_dir.split("/")) > len(self.original_dir.split("/")):
                     self.current_dir = tmp_dir
                     conn.send(b"OK /")
-                    print(self.current_dir)
                 else:
                     conn.send(b"Err /")
         elif args[1] == "delete":
-            os.remove(os.path.relpath(args[2]))
+            file = "{}/{}".format(self.current_dir, args[2])
+            print(file)
+            os.remove(file)
+            conn.send(b"OK")
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))

@@ -1,4 +1,8 @@
-Dossier médical de Jérémy
+Dossier de Janine Michu
+
+Symptomes : 
+	- A perdu son chat
+	- Se prend pour la mère Michelle
 
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
@@ -8,6 +12,8 @@ Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lore
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
+
+
 
 
 

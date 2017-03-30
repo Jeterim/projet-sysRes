@@ -59,6 +59,8 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
 
     - Elle comporte une interface graphique :
         - Qui permet:
+            - Authentification des users
+            - Stockage des mdp hashés sur le serveur
             - De sélectionner et visualiser un fichier
             - De se déplacer de fichier en fichier et de dossier en dossier
             - Qui permet d'éditer un fichier

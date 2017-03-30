@@ -114,15 +114,13 @@ class MainApp(tk.Frame):
         """
         Creation de l'interface graphique
         """
-        self.login = tk.Button(self, text="list files",
-                               command=self.list_files).pack(side="top")
         self.list = ttk.Treeview(self)
         ysb = ttk.Scrollbar(self, orient='vertical', command=self.list.yview)
         self.list.configure(yscroll=ysb.set)
         self.list.pack(side="left")
 
         self.editor = tk.Text(self, wrap=tk.WORD)
-        self.editor.insert(tk.END, "Empty text")
+        self.editor.insert(tk.END, " ")
 
         self.scrollbar = tk.Scrollbar(self)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -154,13 +152,17 @@ class MainApp(tk.Frame):
         """
         Delete the currently selected item in the tree view list
         """
-        item = self.list.focus()
-        if item:
-            real_item = item(item)
+        current_item = self.list.focus()
+        if current_item:
+            real_item = self.list.item(current_item)
             print(real_item["text"])
-            #self.sock.send("delete {}".format(self.list.focus()))
-            self.list.delete(item)
-        print('Delete Boum !')
+            self.sock.send("Graphique delete {}".format(
+                real_item["text"]).encode('utf-8'))
+            time.sleep(0.2)
+            msg = self.sock.recv(BUFFER_SIZE).decode()
+            if msg.startswith("OK"):
+                self.list.delete(current_item)
+                print('Delete Boum !')
 
     def save_file(self):
         """
