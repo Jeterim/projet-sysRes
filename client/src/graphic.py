@@ -136,20 +136,55 @@ class MainApp(tk.Frame):
         self.save_button = tk.Button(self, text="Save file",
                                      command=self.save_file).pack(side="bottom")
 
-        self.back_button = tk.Button(self, text="retour", command=self.get_back).pack()
+        self.back_button = tk.Button(
+            self, text="retour", command=self.get_back).pack()
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(label="Delete", command=self.delete_item)
+        self.list.bind("<ButtonRelease-3>", self.popup)
+
+        tk.Button(self, text="Delete", command=self.delete_item).pack()
+
+    def popup(self, event):
+        """
+        Suppose to pop the context menu
+        """
+        self.context_menu.tk_popup(event.x_root, event.y_root)
+
+    def delete_item(self):
+        """
+        Delete the currently selected item in the tree view list
+        """
+        item = self.list.focus()
+        if item:
+            real_item = item(item)
+            print(real_item["text"])
+            #self.sock.send("delete {}".format(self.list.focus()))
+            self.list.delete(item)
+        print('Delete Boum !')
 
     def save_file(self):
+        """
+        Write the content of the file on the server
+        """
         file_content = self.editor.get("0.0", tk.END)
         print(file_content)
         item_dic = self.get_selected_item(None)
-        self.sock.send("Graphique modify {} {}".format(item_dic["text"], len(file_content)).encode())
+        self.sock.send("Graphique modify {} {}".format(
+            item_dic["text"], len(file_content)).encode())
         time.sleep(0.5)
         self.sock.send(file_content.encode())
 
     def get_back(self):
+        """
+        Allow to cd .. and refresh the tree view
+        """
         self.sock.send("Graphique chdir ..".encode())
         time.sleep(0.3)
-        self.populate_tree_view()
+        msg = self.sock.recv(BUFFER_SIZE).decode()
+        if msg.startswith("OK"):
+            self.populate_tree_view()
+        else:
+            print("Tu n'as le droit de remonter encore")
 
     def populate_tree_view(self):
         """

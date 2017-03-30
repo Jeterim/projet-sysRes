@@ -51,3 +51,17 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
 - Posibilité d'avoir des actions supplémentaires pour certains roles pour ajouter ou modifier les personnes pouvant d'autentitfier
 - Voir comment gerer les identifiants/mdp autre que ne dur (BDD ?)
 - Gerer les outils et commandes dynamiques (ex vi) et comment gerer la relation client/serveur
+
+
+
+
+# Notre version minimal : 
+
+    - Elle comporte une interface graphique :
+        - Qui permet:
+            - De sélectionner et visualiser un fichier
+            - De se déplacer de fichier en fichier et de dossier en dossier
+            - Qui permet d'éditer un fichier
+    - Nous avons implémenté des droits pour chacun des dossiers afin que seuls les gens autorisés puissent voir ou modifier nu fichier.
+    - Comme demandé elle possède une fonctionnalité additionelle :
+        - Les communications utilisent le protocole SSL.
