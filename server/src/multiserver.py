@@ -38,9 +38,13 @@ def saveAcl():
         file.write(str(save))
 
 def initAcl():
-    acl.add_roles(['admin', 'doctor', 'employee'])
+    acl.add_roles(['admin', 'doctor', 'psychiatrist' 'employee'])
     acl.add({
-        'general': {'r', 'w', 'x'},
+        'Psy': {'r', 'w', 'x'},
+        'Bruce_Lee': {'r', 'w', 'x'},
+        'Janine_Michu': {'r', 'w', 'x'},
+        'John_Doe': {'r', 'w', 'x'},
+        'Yves_Tedescon': {'r', 'w', 'x'},
         'adminAction': {'create', 'edit', 'delete'},
     })
 
@@ -50,7 +54,11 @@ def initAcl():
     },
     'doctor': {
         'general': ['x']
+    },
+    'psychiatrist': {
+        'Psy': ['r', 'w', 'x']
     }
+
 })
 
 class ClientThread(Thread):
@@ -103,7 +111,7 @@ class ClientThread(Thread):
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
                     insert = args[1].split(':')
 
-                    if db.query('SELECT key FROM persons WHERE name="{}"'.format(insert[0])).first() == None:
+                    if db.query('SELECT key FROM persons WHERE name=:name', name=insert[0]).first() == None:
                         print("creation accepted")
                         db.query('INSERT INTO persons (key, name, password, role, lastCo, connected, deleted) VALUES(NULL, :name, :password, :role, :lastCo, :connected, :deleted)',
                             name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False, deleted=False)
@@ -121,7 +129,7 @@ class ClientThread(Thread):
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
                     edit = args[1].split(':')
-                    if db.query('SELECT key FROM persons WHERE name="{}" and deleted=0'.format(edit[0])).first() != None:
+                    if db.query('SELECT key FROM persons WHERE name=:name and deleted=0', name=edit[0]).first() != None:
                         print("edition accepted")
                         db.query('UPDATE persons SET password=:password, role=:role WHERE name=:name',
                             password=edit[1], role=edit[2], name=edit[0])
@@ -135,9 +143,9 @@ class ClientThread(Thread):
                     print("Vous avez les acces pour supprimer une personne")
 
                     #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
-                    if db.query('SELECT key FROM persons WHERE name="{}" and deleted=0'.format(args[1])).first() != None and args[1] != self.username:
+                    if db.query('SELECT key FROM persons WHERE name=:name and deleted=0', name=args[1]).first() != None and args[1] != self.username:
                         print("deletion accepted")
-                        db.query('UPDATE persons SET deleted=1 WHERE name="{}"'.format(args[1]))
+                        db.query('UPDATE persons SET deleted=1 WHERE name=:name', name=args[1])
                         conn.send(b"personne deleted")
                     else:
                         conn.send(b"echec delete")
@@ -175,6 +183,7 @@ class ClientThread(Thread):
         elif args[1] == "ls":
             self.list_dir()
         elif args[1] == "chdir":
+            print("Le dir {}".format(args[2]))
             if args[2] != "..":
                 self.current_dir = os.path.abspath(args[2])
             else:
@@ -227,7 +236,7 @@ class ClientThread(Thread):
     def connect(self, args, db):
         auth = args[1].split(":")
         print("Login : {} Password : {}".format(auth[0], auth[1]))
-        row = db.query('SELECT password, role FROM persons WHERE name="{}" and deleted=0'.format(auth[0])).first()
+        row = db.query('SELECT password, role FROM persons WHERE name=:name and deleted=0', name=auth[0]).first()
         print("Ma requete me donne : {}".format(row))
         #Trouver un moyen de savoir si ce nom existe avant la condition 
         if row and row.password == auth[1]: #Authentifie
@@ -248,17 +257,17 @@ class ClientThread(Thread):
         time.sleep(0.5)
 
     def updateTime(self, db):
-        row = db.query('SELECT lastCo FROM persons WHERE name="{}" and deleted=0'.format(self.username)).first()
+        row = db.query('SELECT lastCo FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print(row.lastCo)
         db.query('UPDATE persons SET lastCo=:lastCo WHERE name=:name', lastCo=time.time(), name=self.username)
-        row = db.query('SELECT lastCo FROM persons WHERE name="{}" and deleted=0'.format(self.username)).first()
+        row = db.query('SELECT lastCo FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print("And now it's {}".format(row.lastCo))
 
     def manageConnexion(self, db):
-        row = db.query('SELECT connected FROM persons WHERE name="{}" and deleted=0'.format(self.username)).first()
+        row = db.query('SELECT connected FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print(row.connected, not row.connected, type(not row.connected))
         db.query('UPDATE persons SET connected=:connected WHERE name=:name', connected=not row.connected, name=self.username)
-        row = db.query('SELECT connected FROM persons WHERE name="{}" and deleted=0'.format(self.username)).first()
+        row = db.query('SELECT connected FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print("And now it's {} / {}".format(row.connected, type(row.connected)))
 
 
