@@ -68,3 +68,11 @@ Projet Système et Réseau 3A 2017 à l'INSA CVL
     - Nous avons implémenté des droits pour chacun des dossiers afin que seuls les gens autorisés puissent voir ou modifier nu fichier.
     - Comme demandé elle possède une fonctionnalité additionelle :
         - Les communications utilisent le protocole SSL.
+
+
+
+---
+# Prez ( ~30 minutes tout compris )
+- Contrib de chacun ( meme ce qu'ils ont essayé)
+- Présentation la solution minimale et la justifier ( en quoi elle consiste , avantages, inconvénients, fonction additionelle et leurs avantages)
+- La démo, chacun sa partie pour pouvoir répondre aux questions.

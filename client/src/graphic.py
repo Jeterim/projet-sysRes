@@ -6,13 +6,14 @@ Authors : Jérémy Petit, David Neyron, Quentin Laplanche
 import tkinter as tk
 from tkinter import ttk
 from tkinter import tix
+from itertools import cycle
 import socket
 import hashlib
 import time
 import ssl
 import os
 
-TCP_IP = '127.0.0.1'
+TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
 BUFFER_SIZE = 2048
 
@@ -106,6 +107,93 @@ class LoginApp(tk.Frame):
         app = MainApp(self.sock, master=nb)
         nb.add(app, text="Main Window")
         nb.forget(0)
+
+        term = TermApp(self.sock, master=nb)
+        nb.add(term, text="Console")
+
+
+class TermApp(tk.Frame):
+
+    def __init__(self, sock, master=None):
+        super().__init__(master)
+        self.pack()
+        self.sock = sock
+        self.create_widgets()
+
+    def create_widgets(self):
+
+        self.editor = tk.Text(self, wrap=tk.WORD)
+        self.editor.insert(
+            tk.END, "Commandes disponibles: \n cat : Permet d'afficher un fichier \n list pour lister les fichiers")
+        self.editor.pack(fill=tk.X)
+        # self.editor.bind("<Insert>", self.insert_all)
+
+        self.txt = tk.StringVar()
+        self.txt.set("john@Dossier-medical> ")
+        self.rootEntry = tk.Entry(self, textvariable=self.txt)
+        self.rootEntry.pack(side="bottom", fill=tk.X)
+        self.rootEntry.bind("<Return>", self.cycle_text)
+
+    def cycle_text(self, arg=None):
+        line = self.txt.get()
+        prompt, command = line.split('> ')
+        self.txt.set("john@Dossier-medical> ")
+        if command.startswith("ls"):
+            values = self.list_files()
+            self.editor.replace(
+                "0.0", tk.END, "{}> {}\n{}".format(prompt, command, values))
+        elif command.startswith("edit"):
+            self.edit(command, prompt)
+        elif command.startswith("cd"):
+            self.chdir(command, prompt)
+        elif command.startswith("delete"):
+            self.delete(command, prompt)
+
+    def chdir(self, command, prompt):
+        instruction, target = command.split(None)
+        self.sock.send("Graphique print {}".format(target).encode())
+        size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
+        print(size_of_file)
+        if size_of_file != "Directory":
+            content = self.sock.recv(int(size_of_file)).decode('utf-8')
+            print(content)
+            self.editor.replace(
+                "0.0", tk.END, "{}> {} \nError {} is not a directory".format(prompt, command, content))
+        else:
+            self.editor.replace("0.0", tk.END, "cd into {}".format(target))
+            # time.sleep(1)
+            # self.editor.replace("0.0", tk.END, "{}".format(prompt))
+
+    def edit(self, command, prompt):
+        instruction, target = command.split(None)
+        self.sock.send("Graphique print {}".format(target).encode())
+        size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
+        print(size_of_file)
+        if size_of_file != "Directory":
+            content = self.sock.recv(int(size_of_file)).decode('utf-8')
+            print(content)
+            self.editor.replace(
+                "0.0", tk.END, "{}> {} \n{}".format(prompt, command, content))
+            # page1.pop
+        else:
+            self.editor.replace(
+                "0.0", tk.END, "{}{} is a directory, so I've cd you into it".format(prompt, target))
+
+    def delete(self, command, prompt):
+        instruction, target = command.split(None)
+        self.sock.send("Graphique delete {}".format(target).encode('utf-8'))
+        # time.sleep(0.2)
+        msg = self.sock.recv(BUFFER_SIZE).decode()
+        if not(msg.startswith("OK")):
+            self.editor.replace(
+                "0.0", tk.END, "{} Error deleting {}".format(prompt, target))
+
+    def list_files(self):
+        """
+        Test d'execution d'une commande sur le serveur
+        """
+        self.sock.send(b"Graphique ls")
+        return "\n".join(self.sock.recv(BUFFER_SIZE).decode('utf-8').split(','))
 
 
 class MainApp(tk.Frame):
