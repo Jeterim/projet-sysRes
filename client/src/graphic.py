@@ -1,5 +1,11 @@
+"""
+Client graphique du projet de Systeme et Reseaux
+
+Authors : Jérémy Petit, David Neyron, Quentin Laplanche
+"""
 import tkinter as tk
 from tkinter import ttk
+from tkinter import tix
 import socket
 import hashlib
 import time
@@ -92,11 +98,14 @@ class LoginApp(tk.Frame):
         """
         Tue la fenetre de login et instancie la fenetre principale
         """
-        app_app = tk.Tk()
-        app_app.title(" Dossier Medical")
-        app = MainApp(self.sock, master=app_app)
-        main_app.destroy()
-        app.mainloop()
+        # app_app = tk.Tk()
+        # app_app.title(" Dossier Medical")
+        # app = MainApp(self.sock, master=app_app)
+        # main_app.destroy()
+        # app.mainloop()
+        app = MainApp(self.sock, master=nb)
+        nb.add(app, text="Main Window")
+        nb.forget(0)
 
 
 class MainApp(tk.Frame):
@@ -137,16 +146,31 @@ class MainApp(tk.Frame):
         self.back_button = tk.Button(
             self, text="retour", command=self.get_back).pack()
         self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(
+            label="New file", command=self.create_item)
+        self.context_menu.add_command(
+            label="New Folder", command=self.create_folder)
         self.context_menu.add_command(label="Delete", command=self.delete_item)
         self.list.bind("<ButtonRelease-3>", self.popup)
 
         tk.Button(self, text="Delete", command=self.delete_item).pack()
+        tk.Button(self, text="Temporaire : Context menu",
+                  command=self.pop_menu).pack()
 
     def popup(self, event):
         """
         Suppose to pop the context menu
         """
         self.context_menu.tk_popup(event.x_root, event.y_root)
+
+    def create_folder(self):
+        tk.Dialog()
+
+    def create_item(self):
+        pass
+
+    def pop_menu(self):
+        self.context_menu.tk_popup(100, 100)
 
     def delete_item(self):
         """
@@ -242,7 +266,14 @@ class MainApp(tk.Frame):
         self.sock.send(b"Graphique chdir")
 
 
-main_app = tk.Tk()
-main_app.title("Login Dossier Medical")
-app = LoginApp(master=main_app)
-app.mainloop()
+# main_app = tk.Tk()
+# main_app.title("Login Dossier Medical")
+# app = LoginApp(master=main_app)
+# app.mainloop()
+root_app = tk.Tk()
+root_app.title = "Dossier médical"
+nb = ttk.Notebook(root_app)
+page1 = LoginApp(nb)
+nb.add(page1, text="Login")
+nb.pack(expand=1, fill="both")
+root_app.mainloop()

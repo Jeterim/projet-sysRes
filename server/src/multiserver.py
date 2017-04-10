@@ -145,6 +145,8 @@ class ClientThread(Thread):
             print(file)
             os.remove(file)
             conn.send(b"OK")
+        elif args[1] == "mkdir":
+            os.mkdir(args[2])
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
