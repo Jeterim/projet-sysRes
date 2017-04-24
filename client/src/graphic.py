@@ -4,13 +4,16 @@ Client graphique du projet de Systeme et Reseaux
 Authors : Jérémy Petit, David Neyron, Quentin Laplanche
 """
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, PhotoImage
+from PIL import Image, ImageTk
 from tkinter import tix
 import socket
 import hashlib
 import time
 import ssl
 import os
+import sys
+import pickle
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6262
@@ -128,6 +131,13 @@ class MainApp(tk.Frame):
         self.list.configure(yscroll=ysb.set)
         self.list.pack(side="left")
 
+        image = Image.open("lenna.gif")
+        photo = ImageTk.PhotoImage(image, master=self)
+
+        self.img = tk.Label(self,image = photo)
+        self.img.image = photo
+        self.img.pack()
+
         self.editor = tk.Text(self, wrap=tk.WORD)
         self.editor.insert(tk.END, " ")
 
@@ -226,9 +236,27 @@ class MainApp(tk.Frame):
         """
         Update the text editor whenever another item is selected in the tree view UI
         """
-        content = self.get_text_for_item(self.get_selected_item(event))
-        if content != "NotFound":
-            self.editor.replace("0.0", tk.END, content)
+        txt = self.get_selected_item(event)
+        _, ext = os.path.splitext(txt['text'])
+        print("extension : {}".format(ext))
+        if ext == ".gif":
+            print("c'est une image")
+            content = self.get_img_for_item(self.get_selected_item(event))
+            #image = Image.open(content)
+            photo = ImageTk.PhotoImage(content, master=self)
+            self.img.image = photo
+            self.img.config(image=photo)
+            self.editor.replace("0.0", tk.END, "")
+            self.editor.config(height=0)
+        else:
+            print("c'est un texte")
+            content = self.get_text_for_item(self.get_selected_item(event))
+            if content != "NotFound":
+                countVar = 0
+                self.editor.config(height=24)
+                self.editor.replace("0.0", tk.END, content)
+                print(self.editor.search("ceinture", "1.0", stopindex="end", count=countVar)) #implementer une recherche
+
 
     def get_selected_item(self, event):
         """
@@ -247,9 +275,33 @@ class MainApp(tk.Frame):
         if size_of_file == "Directory":
             self.populate_tree_view()
         else:
+            print("test")
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
+            print("fin content")
             print(content)
             return content
+
+    def get_img_for_item(self, item_dic):
+        """
+        Return the content of a selected item from the tree view UI.
+        """
+        self.sock.send("Graphique printimg {}".format(item_dic["text"]).encode())
+        size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
+        print(size_of_file)
+
+        img = self.sock.recv(int(size_of_file))
+        taille = sys.getsizeof(img)
+        print("Taille : {}".format(taille))
+        imageDict = pickle.loads(img)
+        print(imageDict)
+        #if size_of_file == "Directory":
+        #    self.populate_tree_view()
+        #else:
+        print("test")
+            #content = self.sock.recv(int(size_of_file)).decode('utf-8')
+        print("fin content")
+            #print(content)
+        return imageDict['imageFile']
 
     def list_files(self):
         """

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import hashlib
 import os
+import sys
 import socket
 import time
 import hashlib
@@ -13,6 +14,8 @@ import records
 import tempfile
 import ssl
 import tempfile
+import pickle
+from PIL import Image, ImageTk
 
 data_dict = {"john": {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "doctor", "lastCo": "1488482763.272476", "connected": False},
              "johnA": {"password": "d6b4e84ee7f31d88617a6b60421451272ebf1a3a", "role": "admin", "lastCo": "1488482763.272476", "connected": False}}
@@ -127,6 +130,17 @@ class ClientThread(Thread):
                         self.send_file(file)
                 except FileNotFoundError:
                     conn.send(b"NotFound")
+        elif args[1] == "printimg":
+            path = "{}/{}".format(self.current_dir, args[2])
+            if os.path.isdir(path):
+                self.current_dir = path
+                conn.send(b"Directory")
+            else:
+                try:
+                    image = Image.open(path)
+                    self.send_img(image)
+                except FileNotFoundError:
+                    conn.send(b"NotFound")
         elif args[1] == "ls":
             self.list_dir()
         elif args[1] == "chdir":
@@ -164,6 +178,16 @@ class ClientThread(Thread):
         content = file.read()
         print(content)
         conn.send(str(content).encode())
+
+    def send_img(self, file):
+        """ Take a img and send it through the socket"""
+        imageDict = {'imageFile': file, 'user': 'test'}
+        pickleData = pickle.dumps(imageDict)
+        taille = sys.getsizeof(pickleData)
+        print("Taille : {}".format(taille))
+        conn.send(str(taille).encode())
+        conn.send(pickleData)
+        #conn.send(str(content).encode())
 
     def execute_command(self, args):
         """
