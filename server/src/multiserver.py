@@ -165,6 +165,7 @@ class ClientThread(Thread):
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
         file_list = os.listdir(self.current_dir)
+        print(file_list)
         conn.send(",".join(file_list).encode())
 
     def send_file(self, file):
