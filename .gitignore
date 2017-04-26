@@ -1,11 +1,14 @@
 .vscode/
 
 .idea/
-<<<<<<< HEAD
-__pycache__/
-=======
 __pycache__/
 
 server/__pycache__/
 client/__pycache__/
->>>>>>> develop
+
+server/dist/
+server/build/
+client/dist/
+client/build/
+
+*.DS_Store
