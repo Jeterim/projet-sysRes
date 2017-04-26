@@ -34,6 +34,7 @@ def initAcl():
     acl.add({
         #Dossiers racine
         'Psy': {'r', 'w', 'x'},
+        'kiné': {'r', 'w', 'x'},
         'General': {'r', 'w', 'x'},
         #Dossiers patients
         'Bruce_Lee': {'r', 'w', 'x'},
@@ -47,6 +48,12 @@ def initAcl():
     acl.grants({
         'admin': {
             'adminAction': ['create', 'edit', 'delete', 'modify'],
+            'General': ['r', 'w', 'x'],
+            'Psy': ['r', 'w', 'x'],
+            'Bruce_Lee': ['r', 'w', 'x'],
+            'Janine_Michu': ['r', 'w', 'x'],
+            'John_Doe': ['r', 'w', 'x'],
+            'Yves_Tedescon': ['r', 'w', 'x']
         },
         'doctor': {
             'General': ['r', 'w', 'x'],
@@ -267,8 +274,12 @@ class ClientThread(Thread):
         elif args[1] == "delete":
             file = "{}/{}".format(self.current_dir, args[2])
             print(file)
-            os.remove(file)
-            conn.send(b"OK")
+            if acl.check(self.role, os.path.basename(args[2]), 'w'):
+                os.remove(file)
+                conn.send(b"OK")
+                acl.revoke_all(self.role, args[2])
+            else: 
+                conn.send(b"AccessError")
         elif args[1] == "mkdir":
             if acl.check(self.role, os.path.basename(args[2]), 'w'):
                 os.mkdir(args[2])
@@ -277,6 +288,9 @@ class ClientThread(Thread):
                 })
                 acl.grants({
                     self.role: {
+                        args[2]: ['r', 'w', 'x']
+                    },
+                    'admin': {
                         args[2]: ['r', 'w', 'x']
                     }
                 })
