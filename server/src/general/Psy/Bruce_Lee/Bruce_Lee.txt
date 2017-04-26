@@ -1,4 +1,4 @@
-ssier médical de Jérémy
+Dossier médical de Jérémy
 Amateur de Kung-Fu
 
 Symptomes:
@@ -10,6 +10,5 @@ Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lore
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
-Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
-Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
-Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
+
+
