@@ -121,6 +121,7 @@ class TermApp(tk.Frame):
         self.pack()
         self.editing = False
         self.username = username
+        self.filename = 'none'
         self.sock = sock
         self.create_widgets()
 
@@ -160,9 +161,25 @@ class TermApp(tk.Frame):
                 self.delete(command, prompt)
         else:
             if command.startswith("save") or command.startswith(":w"):
-                EDITING = False
+                print("COucou je veux save")
+                self.save_file()
+                self.editing = False
+                self.filename = 'empty'
             elif command.startswith("quit"):
-                EDITING = False
+                self.editing = False
+                self.filename = 'empty'
+
+    def save_file(self):
+        """
+        Write the content of the file on the server
+        """
+        file_content = self.editor.get("0.0", tk.END)
+        print(file_content)
+        print(sys.getsizeof(file_content))
+        self.sock.send("Graphique modify {} {}".format(
+            self.filename, sys.getsizeof(file_content)).encode())
+        time.sleep(0.5)
+        self.sock.send(file_content.encode())
 
     def execute_ls(self, prompt, command):
         values = self.list_files()
@@ -205,8 +222,10 @@ class TermApp(tk.Frame):
         if size_of_file != "Directory":
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
+            self.editing = True
+            self.filename = target
             self.editor.replace(
-                "0.0", tk.END, "{}> {} \n{}".format(prompt, command, content))
+                "0.0", tk.END, "{}".format(content))
             # page1.pop
         else:
             self.editor.replace(
@@ -310,7 +329,7 @@ class MainApp(tk.Frame):
             print(real_item["text"])
             self.sock.send("Graphique delete {}".format(
                 real_item["text"]).encode('utf-8'))
-            time.sleep(0.2)
+            # time.sleep(0.2)
             msg = self.sock.recv(BUFFER_SIZE).decode()
             if msg.startswith("OK"):
                 self.list.delete(current_item)
@@ -324,7 +343,7 @@ class MainApp(tk.Frame):
         print(file_content)
         item_dic = self.get_selected_item(None)
         self.sock.send("Graphique modify {} {}".format(
-            item_dic["text"], len(file_content)).encode())
+            item_dic["text"], sys.getsizeof(file_content)).encode())
         time.sleep(0.5)
         self.sock.send(file_content.encode())
 
