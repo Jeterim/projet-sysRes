@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import hashlib
 import os
+import sys
 import socket
 import time
 import hashlib
@@ -8,14 +9,15 @@ import acl
 from socketserver import ThreadingMixIn  # Python 3
 from threading import Thread
 from subprocess import Popen, PIPE, run
-import shlex
 import records
 import tempfile
 import ssl
 import tempfile
+import pickle
+from PIL import Image, ImageTk
 import ast
 
-#Init Acl
+# Init Acl
 acl = acl.Acl()
 
 # Ouverture sauvegarde des acl
@@ -39,17 +41,18 @@ def initAcl():
     })
 
     acl.grants({
-    'admin': {
-        'adminAction': ['create', 'edit', 'delete', 'modify'],
-    },
-    'doctor': {
-        'general': ['x']
-    },
-    'psychiatrist': {
-        'Psy': ['r', 'w', 'x']
-    }
+        'admin': {
+            'adminAction': ['create', 'edit', 'delete', 'modify'],
+        },
+        'doctor': {
+            'general': ['x']
+        },
+        'psychiatrist': {
+            'Psy': ['r', 'w', 'x']
+        }
 
-})
+    })
+
 
 def saveAcl():
     save = acl.__getstate__()
@@ -57,8 +60,9 @@ def saveAcl():
     with open('sauvAcl.json', "w") as file:
         file.write(str(save))
 
-#initAcl() # Si on a besoin d'un reset d'acl
-saveAcl() # Sauvegarde pour les changements importants
+# initAcl() # Si on a besoin d'un reset d'acl
+saveAcl()  # Sauvegarde pour les changements importants
+
 
 class ClientThread(Thread):
 
@@ -68,7 +72,7 @@ class ClientThread(Thread):
         self.port = port
         self.username = ""
         self.role = ""
-        print("[+] New thread started for "+ip+":"+str(port))
+        print("[+] New thread started for " + ip + ":" + str(port))
         # Temporary
         self.original_dir = os.getcwd()
         self.current_dir = os.path.abspath('general')
@@ -85,13 +89,13 @@ class ClientThread(Thread):
         #     os.chdir('general')
         #     self.has_changed_dir = 1
 
-
-        #Si besoin de re-clean la bdd
-        #self.init_db(db)
+        # Si besoin de re-clean la bdd
+        # self.init_db(db)
 
         rows = db.query('SELECT * FROM persons')
         for _r in rows:
-            print(_r.key, _r.name, _r.role, _r.connected, not _r.connected, _r.deleted)
+            print(_r.key, _r.name, _r.role, _r.connected,
+                  not _r.connected, _r.deleted)
         while True:
             data = conn.recv(2048).decode('utf-8')
             if not data:
@@ -107,13 +111,14 @@ class ClientThread(Thread):
                 if acl.check(self.role, 'adminAction', 'create'):
                     print("Vous avez les acces pour creer une nouvelle personne")
 
-                    #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    # fonction a appeler pour la creation d'une nouvelle
+                    # personne (dict + acl)
                     insert = args[1].split(':')
 
                     if db.query('SELECT key FROM persons WHERE name=:name', name=insert[0]).first() == None:
                         print("creation accepted")
                         db.query('INSERT INTO persons (key, name, password, role, lastCo, connected, deleted) VALUES(NULL, :name, :password, :role, :lastCo, :connected, :deleted)',
-                            name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False, deleted=False)
+                                 name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False, deleted=False)
                         conn.send(b"personne cree")
                     else:
                         conn.send(b"echec creation")
@@ -126,12 +131,13 @@ class ClientThread(Thread):
                 if acl.check(self.role, 'adminAction', 'edit'):
                     print("Vous avez les acces pour editer une personne")
 
-                    #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    # fonction a appeler pour la creation d'une nouvelle
+                    # personne (dict + acl)
                     edit = args[1].split(':')
                     if db.query('SELECT key FROM persons WHERE name=:name and deleted=0', name=edit[0]).first() != None:
                         print("edition accepted")
                         db.query('UPDATE persons SET password=:password, role=:role WHERE name=:name',
-                            password=edit[1], role=edit[2], name=edit[0])
+                                 password=edit[1], role=edit[2], name=edit[0])
                         conn.send(b"personne updated")
                     else:
                         conn.send(b"echec update")
@@ -141,10 +147,12 @@ class ClientThread(Thread):
                 if acl.check(self.role, 'adminAction', 'delete'):
                     print("Vous avez les acces pour supprimer une personne")
 
-                    #fonction a appeler pour la creation d'une nouvelle personne (dict + acl)
+                    # fonction a appeler pour la creation d'une nouvelle
+                    # personne (dict + acl)
                     if db.query('SELECT key FROM persons WHERE name=:name and deleted=0', name=args[1]).first() != None and args[1] != self.username:
                         print("deletion accepted")
-                        db.query('UPDATE persons SET deleted=1 WHERE name=:name', name=args[1])
+                        db.query(
+                            'UPDATE persons SET deleted=1 WHERE name=:name', name=args[1])
                         conn.send(b"personne deleted")
                     else:
                         conn.send(b"echec delete")
@@ -175,7 +183,7 @@ class ClientThread(Thread):
             elif args[0] == "NULLUSR":
                 conn.send(b"no action")
 
-            elif args[0] == "LOGOUT": #Gestion de la deconnexion
+            elif args[0] == "LOGOUT":  # Gestion de la deconnexion
                 self.manageConnexion(db)
             elif args[0] == "Graphique":
                 self.graphic_features(args)
@@ -186,7 +194,8 @@ class ClientThread(Thread):
     def graphic_features(self, args):
         """ treat what is send from the graphic client """
         if args[1] == "modify":
-            data = conn.recv(int(args[3]) + 1).decode('utf-8') # Recoit le fichier
+            # Recoit le fichier
+            data = conn.recv(int(args[3]) + 1).decode('utf-8')
             print(data)
             path = "{}/{}".format(self.current_dir, args[2])
             print(path)
@@ -203,6 +212,17 @@ class ClientThread(Thread):
                         self.send_file(file)
                 except FileNotFoundError:
                     conn.send(b"NotFound")
+        elif args[1] == "printimg":
+            path = "{}/{}".format(self.current_dir, args[2])
+            if os.path.isdir(path):
+                self.current_dir = path
+                conn.send(b"Directory")
+            else:
+                try:
+                    image = Image.open(path)
+                    self.send_img(image)
+                except FileNotFoundError:
+                    conn.send(b"NotFound")
         elif args[1] == "ls":
             self.list_dir()
         elif args[1] == "chdir":
@@ -210,16 +230,30 @@ class ClientThread(Thread):
             if args[2] != "..":
                 self.current_dir = os.path.abspath(args[2])
             else:
-                self.current_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir))
+                tmp_dir = os.path.abspath(
+                    os.path.join(self.current_dir, os.pardir))
+                if len(tmp_dir.split("/")) > len(self.original_dir.split("/")):
+                    self.current_dir = tmp_dir
+                    conn.send(b"OK /")
+                else:
+                    conn.send(b"Err /")
+        elif args[1] == "delete":
+            file = "{}/{}".format(self.current_dir, args[2])
+            print(file)
+            os.remove(file)
+            conn.send(b"OK")
+        elif args[1] == "mkdir":
+            os.mkdir(args[2])
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
         file_list = os.listdir(self.current_dir)
+        print(file_list)
         conn.send(",".join(file_list).encode())
 
     def send_file(self, file):
         """ Take a file and send it through the socket"""
-        file.seek(0, 2) # Seek end of file
+        file.seek(0, 2)  # Seek end of file
         length = file.tell()
         print(length)
         conn.send(str(length).encode())
@@ -228,6 +262,16 @@ class ClientThread(Thread):
         content = file.read()
         print(content)
         conn.send(str(content).encode())
+
+    def send_img(self, file):
+        """ Take a img and send it through the socket"""
+        imageDict = {'imageFile': file, 'user': 'test'}
+        pickleData = pickle.dumps(imageDict)
+        taille = sys.getsizeof(pickleData)
+        print("Taille : {}".format(taille))
+        conn.send(str(taille).encode())
+        conn.send(pickleData)
+        # conn.send(str(content).encode())
 
     def execute_command(self, args):
         """
@@ -247,9 +291,9 @@ class ClientThread(Thread):
         db.query('CREATE TABLE persons (key INTEGER PRIMARY KEY, name TEXT UNIQUE, password text, role text, lastCo text, connected bool, deleted bool)')
 
         db.query('INSERT INTO persons (key, name, password, role, lastCo, connected, deleted) VALUES(:key, :name, :password, :role, :lastCo, :connected, :deleted)',
-                    key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False, deleted=False)
+                 key="1", name="john", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="doctor", lastCo="1488482763.272476", connected=False, deleted=False)
         db.query('INSERT INTO persons (key, name, password, role, lastCo, connected, deleted) VALUES(:key, :name, :password, :role, :lastCo, :connected, :deleted)',
-                    key="2", name="johnA", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="admin", lastCo="1488482763.272476", connected=False, deleted=False)
+                 key="2", name="johnA", password="d6b4e84ee7f31d88617a6b60421451272ebf1a3a", role="admin", lastCo="1488482763.272476", connected=False, deleted=False)
 
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())
@@ -259,10 +303,12 @@ class ClientThread(Thread):
     def connect(self, args, db):
         auth = args[1].split(":")
         print("Login : {} Password : {}".format(auth[0], auth[1]))
-        row = db.query('SELECT password, role FROM persons WHERE name=:name and deleted=0', name=auth[0]).first()
+        row = db.query(
+            'SELECT password, role FROM persons WHERE name=:name and deleted=0', name=auth[0]).first()
+
         print("Ma requete me donne : {}".format(row))
-        #Trouver un moyen de savoir si ce nom existe avant la condition 
-        if row and row.password == auth[1]: #Authentifie
+        # Trouver un moyen de savoir si ce nom existe avant la condition
+        if row and row.password == auth[1]:  # Authentifie
             print("it's him")
             print(row.password, row.role)
             self.username = auth[0]
@@ -270,7 +316,8 @@ class ClientThread(Thread):
             self.updateTime(db)
             self.manageConnexion(db)
             # Check proprement si le login/mdp est correct
-            # Check si personne ne s'est connecte avec cet identifiant deja (utiliser une date de co ?)
+            # Check si personne ne s'est connecte avec cet identifiant deja
+            # (utiliser une date de co ?)
             print(self.username)
             print(self.role, acl.check(self.role, 'general', 'r'))
             conn.send("granted;{}".format(row.role).encode())
@@ -280,17 +327,24 @@ class ClientThread(Thread):
         time.sleep(0.5)
 
     def updateTime(self, db):
-        row = db.query('SELECT lastCo FROM persons WHERE name=:name and deleted=0', name=self.username).first()
+        row = db.query(
+            'SELECT lastCo FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print(row.lastCo)
-        db.query('UPDATE persons SET lastCo=:lastCo WHERE name=:name', lastCo=time.time(), name=self.username)
-        row = db.query('SELECT lastCo FROM persons WHERE name=:name and deleted=0', name=self.username).first()
+        db.query('UPDATE persons SET lastCo=:lastCo WHERE name=:name',
+                 lastCo=time.time(), name=self.username)
+        row = db.query(
+            'SELECT lastCo FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print("And now it's {}".format(row.lastCo))
 
     def manageConnexion(self, db):
-        row = db.query('SELECT connected FROM persons WHERE name=:name and deleted=0', name=self.username).first()
+        row = db.query(
+            'SELECT connected FROM persons WHERE name=:name and deleted=0', name=self.username).first()
         print(row.connected, not row.connected, type(not row.connected))
-        db.query('UPDATE persons SET connected=:connected WHERE name=:name', connected=not row.connected, name=self.username)
-        row = db.query('SELECT connected FROM persons WHERE name=:name and deleted=0', name=self.username).first()
+        db.query('UPDATE persons SET connected=:connected WHERE name=:name',
+                 connected=not row.connected, name=self.username)
+        row = db.query(
+            'SELECT connected FROM persons WHERE name=:name and deleted=0', name=self.username).first()
+
         print("And now it's {} / {}".format(row.connected, type(row.connected)))
 
 
