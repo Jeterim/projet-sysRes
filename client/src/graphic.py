@@ -384,32 +384,7 @@ class MainApp(tk.Frame):
         self.back_button = tk.Button(
             self, text="retour", command=self.get_back).pack()
         self.context_menu = tk.Menu(self, tearoff=0)
-        self.context_menu.add_command(
-            label="New file", command=self.create_item)
-        self.context_menu.add_command(
-            label="New Folder", command=self.create_folder)
-        self.context_menu.add_command(label="Delete", command=self.delete_item)
-        self.list.bind("<ButtonRelease-3>", self.popup)
-
         tk.Button(self, text="Delete", command=self.delete_item).pack()
-        tk.Button(self, text="Temporaire : Context menu",
-                  command=self.pop_menu).pack()
-
-    def popup(self, event):
-        """
-        Suppose to pop the context menu
-        """
-        self.context_menu.tk_popup(event.x_root, event.y_root)
-
-    def create_folder(self):
-        # tk.Dialog()
-        pass
-
-    def create_item(self):
-        pass
-
-    def pop_menu(self):
-        self.context_menu.tk_popup(100, 100)
 
     def delete_item(self):
         """
@@ -451,10 +426,11 @@ class MainApp(tk.Frame):
         else:
             print("Tu n'as le droit de remonter encore")
 
-    def populate_tree_view(self):
+    def populate_tree_view(self, event=None):
         """
         Fill the tree-view with list fromt the server
         """
+        print("Refresh tree view")
         self.list.delete(*self.list.get_children())
         file_list = self.list_files()
         for file in file_list:
@@ -507,6 +483,8 @@ class MainApp(tk.Frame):
         elif size_of_file == "AccessError":
             # affichage erreur acl ?
             return "NotFound"
+        elif size_of_file == "NotFound":
+            return ''
         elif size_of_file != "Directory" and int(size_of_file) > 0:
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
