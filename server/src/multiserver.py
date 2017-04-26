@@ -32,16 +32,16 @@ with open('sauvAcl.json', "r") as file:
 def initAcl():
     acl.add_roles(['admin', 'doctor', 'psychiatrist', 'nurse'])
     acl.add({
-        #Dossiers racine
+        # Dossiers racine
         'Psy': {'r', 'w', 'x'},
         'kiné': {'r', 'w', 'x'},
         'General': {'r', 'w', 'x'},
-        #Dossiers patients
+        # Dossiers patients
         'Bruce_Lee': {'r', 'w', 'x'},
         'Janine_Michu': {'r', 'w', 'x'},
         'John_Doe': {'r', 'w', 'x'},
         'Yves_Tedescon': {'r', 'w', 'x'},
-        #Autre
+        # Autre
         'adminAction': {'create', 'edit', 'delete', 'modify'},
     })
 
@@ -77,7 +77,7 @@ def saveAcl():
     with open('sauvAcl.json', "w") as file:
         file.write(str(save))
 
-#initAcl() # Si on a besoin d'un reset d'acl
+# initAcl() # Si on a besoin d'un reset d'acl
 saveAcl()  # Sauvegarde pour les changements importants
 
 
@@ -207,7 +207,7 @@ class ClientThread(Thread):
                 self.graphic_features(args)
             else:
                 # TODO Check if dangerous command
-                #self.execute_command(args)
+                # self.execute_command(args)
                 print("Commande non reconnu")
 
     def graphic_features(self, args):
@@ -240,6 +240,7 @@ class ClientThread(Thread):
                         conn.send(b"NotFound")
                 else:
                     print("Erreur acces")
+                    conn.send(b"AccessError")
         elif args[1] == "printimg":
             path = "{}/{}".format(self.current_dir, args[2])
             if os.path.isdir(path):
@@ -275,14 +276,23 @@ class ClientThread(Thread):
             file = "{}/{}".format(self.current_dir, args[2])
             print(file)
             if acl.check(self.role, os.path.basename(args[2]), 'w'):
-                os.remove(file)
-                conn.send(b"OK")
+                if os.path.isdir(file):
+                    if os.listdir(file) == []:
+                        os.removedirs(file)
+                    else:
+                        conn.send("Error directory not empty".encode())
+                else:
+                    os.remove(file)
+                    conn.send(b"OK")
                 acl.revoke_all(self.role, args[2])
             else: 
                 conn.send(b"AccessError")
         elif args[1] == "mkdir":
             if acl.check(self.role, os.path.basename(args[2]), 'w'):
-                os.mkdir(args[2])
+                path = "{}/{}".format(self.current_dir, args[2])
+                os.mkdir(path)
+                conn.send("OK".encode())
+
                 acl.add({
                     args[2]: {'r', 'w', 'x'},
                 })
@@ -296,12 +306,19 @@ class ClientThread(Thread):
                 })
             else:
                 print("Erreur Acces")
+        elif args[1] == "touch":
+            path = "{}/{}".format(self.current_dir, args[2])
+            file = open(path, 'w+')
+            conn.send("OK".encode())
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
         file_list = os.listdir(self.current_dir)
         print(file_list)
-        conn.send(",".join(file_list).encode())
+        if file_list == []:
+            conn.send("Empty".encode())
+        else:
+            conn.send(",".join(file_list).encode())
 
     def send_file(self, file):
         """ Take a file and send it through the socket"""
@@ -309,11 +326,12 @@ class ClientThread(Thread):
         length = file.tell()
         print(length)
         conn.send(str(length).encode())
-        time.sleep(0.5)
-        file.seek(0, 0)
-        content = file.read()
-        print(content)
-        conn.send(str(content).encode())
+        if length > 0:
+            time.sleep(0.5)
+            file.seek(0, 0)
+            content = file.read()
+            print(content)
+            conn.send(str(content).encode())
 
     def send_img(self, file):
         """ Take a img and send it through the socket"""

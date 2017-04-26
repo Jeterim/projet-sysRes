@@ -157,15 +157,31 @@ class TermApp(tk.Frame):
                     self.get_back(command, prompt)
                 else:
                     self.chdir(command, prompt)
-            elif command.startswith("delete"):
+            elif command.startswith("delete") or command.startswith("rm"):
                 self.delete(command, prompt)
+            elif command.startswith("mkdir"):
+                instruction, target = command.split(None)
+                self.sock.send("Graphique mkdir {}".format(target).encode())
+                response = self.sock.recv(BUFFER_SIZE).decode()
+                if response != 'OK':
+                    self.editor.replace(
+                        "0.0", tk.END, "{} folder created".format(target))
+            elif command.startswith("touch"):
+                instruction, target = command.split(None)
+                self.sock.send("Graphique touch {}".format(target).encode())
+                response = self.sock.recv(BUFFER_SIZE).decode()
+                if response == 'OK':
+                    self.editor.replace(
+                        "0.0", tk.END, "{} file created".format(target))
+                else:
+                    self.editor.replace(
+                        "0.0", tk.END, "Error creating {}".format(target))
         else:
             if command.startswith("save") or command.startswith(":w"):
-                print("COucou je veux save")
                 self.save_file()
                 self.editing = False
                 self.filename = 'empty'
-            elif command.startswith("quit"):
+            elif command.startswith("quit") or command.startswith(":q"):
                 self.editing = False
                 self.filename = 'empty'
 
@@ -211,7 +227,7 @@ class TermApp(tk.Frame):
         elif size_of_file == "AccessError":
             pass
         else:
-            
+
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
             self.editor.replace(
@@ -226,7 +242,8 @@ class TermApp(tk.Frame):
             self.editor.replace(
                 "0.0", tk.END, "{}{} is a directory, so I've cd you into it".format(prompt, target))
         elif size_of_file == "AccessError":
-            pass
+            self.editor.replace(
+                "0.0", tk.END, "{} You can't access{}".format(prompt, target))
         else:
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
@@ -384,7 +401,7 @@ class MainApp(tk.Frame):
         if ext == ".gif":
             print("c'est une image")
             content = self.get_img_for_item(self.get_selected_item(event))
-            #image = Image.open(content)
+            # image = Image.open(content)
             photo = ImageTk.PhotoImage(content, master=self)
             self.img.image = photo
             self.img.config(image=photo)
@@ -418,14 +435,14 @@ class MainApp(tk.Frame):
         if size_of_file == "Directory":
             self.populate_tree_view()
         elif size_of_file == "AccessError":
-            #affichage erreur acl ?
+            # affichage erreur acl ?
             return "NotFound"
-        else:
-            print("test")
+        elif size_of_file != "Directory" and int(size_of_file) > 0:
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
-            print("fin content")
             print(content)
             return content
+        else:
+            return ''
 
     def get_img_for_item(self, item_dic):
         """
@@ -445,7 +462,7 @@ class MainApp(tk.Frame):
         #    self.populate_tree_view()
         # else:
         print("test")
-        #content = self.sock.recv(int(size_of_file)).decode('utf-8')
+        # content = self.sock.recv(int(size_of_file)).decode('utf-8')
         print("fin content")
         # print(content)
         return imageDict['imageFile']
