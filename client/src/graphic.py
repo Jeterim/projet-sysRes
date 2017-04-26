@@ -19,6 +19,8 @@ TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
 BUFFER_SIZE = 2048
 
+HELP = "-----------------------\n|Commandes disponibles:|\n----------------------- \n- ls ou list : permet de lister les fichiers du répertoire courant. \n- edit ou vi : Permet d'afficher/editer un fichier\n\t Une fois dans le mode edition, taper: \n\t- save ou :w pour sauvegarder et quitter le mode \n\t- quit ou :q pour quitter sans sauvegarder vos modifications \n- cd vous permettra de changer de répertoire\n- mkdir vous permettra de créer un dossier \n- touch vous permettra de creer un fichier \n\n\t Attention certaines de ces commandes necessites des droits particuliers, distribues en fonction de votre role \n\n Taper help pour revoir cette aide\n"
+
 
 class LoginApp(tk.Frame):
     """
@@ -133,10 +135,10 @@ class TermApp(tk.Frame):
         self.editor = tk.Text(self, wrap=tk.WORD)
         self.editor.configure(state='normal')
         self.editor.insert(
-            tk.END, "Commandes disponibles: \n cat : Permet d'afficher un fichier \n ls pour lister les fichiers")
+            tk.END, HELP)
         if self.role == "admin":
             self.editor.insert(
-                tk.END, "Tu peux ajouter un nouvel utlisateur (N), Modifier un utilisateur (E), ou supprimer un utilisateur (D)\n")
+                tk.END, "\n-------------------------------------------------------\n Les commandes de gestion des utilsateurs sont disponibles : \n- adduser \n- deluser \n- edituser \n- modifyacl\n")
         self.editor.configure(state='normal')
         self.editor.pack(fill=tk.X)
         # self.editor.bind("<Insert>", self.insert_all)
@@ -196,6 +198,8 @@ class TermApp(tk.Frame):
                 else:
                     self.editor.replace(
                         "0.0", tk.END, "Error creating {}".format(target))
+            elif command.startswith("help"):
+                self.editor.replace("0.0", tk.END, HELP)
         else:
             if command.startswith("save") or command.startswith(":w"):
                 self.save_file()
@@ -398,7 +402,8 @@ class MainApp(tk.Frame):
         self.context_menu.tk_popup(event.x_root, event.y_root)
 
     def create_folder(self):
-        tk.Dialog()
+        # tk.Dialog()
+        pass
 
     def create_item(self):
         pass
