@@ -83,10 +83,11 @@ saveAcl()  # Sauvegarde pour les changements importants
 
 class ClientThread(Thread):
 
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, ClientSocket):
         Thread.__init__(self)
         self.ip = ip
         self.port = port
+        self.client_socket = ClientSocket
         self.username = ""
         self.role = ""
         print("[+] New thread started for " + ip + ":" + str(port))
@@ -114,7 +115,7 @@ class ClientThread(Thread):
             print(_r.key, _r.name, _r.role, _r.connected,
                   not _r.connected, _r.deleted)
         while True:
-            data = conn.recv(2048).decode('utf-8')
+            data = self.client_socket.recv(2048).decode('utf-8')
             if not data:
                 break
             print("received data:", data)
@@ -136,9 +137,9 @@ class ClientThread(Thread):
                         print("creation accepted")
                         db.query('INSERT INTO persons (key, name, password, role, lastCo, connected, deleted) VALUES(NULL, :name, :password, :role, :lastCo, :connected, :deleted)',
                                  name=insert[0], password=insert[1], role=insert[2], lastCo=time.time(), connected=False, deleted=False)
-                        conn.send(b"personne cree")
+                        self.client_socket.send(b"personne cree")
                     else:
-                        conn.send(b"echec creation")
+                        self.client_socket.send(b"echec creation")
 
             elif args[0] == "EDITUSR":
                 print("Mon nom c'est : {}".format(self.username))
@@ -155,9 +156,9 @@ class ClientThread(Thread):
                         print("edition accepted")
                         db.query('UPDATE persons SET password=:password, role=:role WHERE name=:name',
                                  password=edit[1], role=edit[2], name=edit[0])
-                        conn.send(b"personne updated")
+                        self.client_socket.send(b"personne updated")
                     else:
-                        conn.send(b"echec update")
+                        self.client_socket.send(b"echec update")
 
             elif args[0] == "DELUSR":
                 print("Mon nom c'est : {}".format(self.username))
@@ -170,9 +171,9 @@ class ClientThread(Thread):
                         print("deletion accepted")
                         db.query(
                             'UPDATE persons SET deleted=1 WHERE name=:name', name=args[1])
-                        conn.send(b"personne deleted")
+                        self.client_socket.send(b"personne deleted")
                     else:
-                        conn.send(b"echec delete")
+                        self.client_socket.send(b"echec delete")
             elif args[0] == "MODIFYACL":
                 print("Mon nom c'est : {}".format(self.username))
                 if acl.check(self.role, 'adminAction', 'modify'):
@@ -182,24 +183,25 @@ class ClientThread(Thread):
                             print("tout correct")
                             acl.grant(args[2], args[3], args[4])
                             print("fin grant")
-                            conn.send(b"grant succeed")
+                            self.client_socket.send(b"grant succeed")
                         else:
-                            conn.send(b"grant failed")
+                            self.client_socket.send(b"grant failed")
                     elif args[1] == "revoke" and (acl.check(args[2], args[3], args[4]) == True):
                         print("pret pour revoke", acl.get_resources())
                         if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
                             print("tout correct")
                             acl.revoke(args[2], args[3], args[4])
                             print("fin revoke")
-                            conn.send(b"revoke succeed")
+                            self.client_socket.send(b"revoke succeed")
                         else:
-                            conn.send(b"revoke failed")
+                            self.client_socket.send(b"revoke failed")
                 else:
                     print("mauvais")
-                    conn.send(b"failed wrong arguments or access")
+                    self.client_socket.send(
+                        b"failed wrong arguments or access")
                 saveAcl()
             elif args[0] == "NULLUSR":
-                conn.send(b"no action")
+                self.client_socket.send(b"no action")
 
             elif args[0] == "LOGOUT":  # Gestion de la deconnexion
                 self.manageConnexion(db)
@@ -214,7 +216,7 @@ class ClientThread(Thread):
         """ treat what is send from the graphic client """
         if args[1] == "modify":
             # Recoit le fichier
-            data = conn.recv(int(args[3]) + 1).decode('utf-8')
+            data = self.client_socket.recv(int(args[3]) + 1).decode('utf-8')
             print(data)
             path = "{}/{}".format(self.current_dir, args[2])
             print(path)
@@ -228,31 +230,31 @@ class ClientThread(Thread):
             if os.path.isdir(path):
                 if acl.check(self.role, args[2], 'x'):
                     self.current_dir = path
-                    conn.send(b"Directory")
+                    self.client_socket.send(b"Directory")
                 else:
-                    conn.send(b"AccessError")
+                    self.client_socket.send(b"AccessError")
             else:
                 if acl.check(self.role, os.path.basename(self.current_dir), 'r'):
                     try:
                         with open(path, 'r') as file:
                             self.send_file(file)
                     except FileNotFoundError:
-                        conn.send(b"NotFound")
+                        self.client_socket.send(b"NotFound")
                 else:
                     print("Erreur acces")
-                    conn.send(b"AccessError")
+                    self.client_socket.send(b"AccessError")
         elif args[1] == "printimg":
             path = "{}/{}".format(self.current_dir, args[2])
             if os.path.isdir(path):
                 self.current_dir = path
-                conn.send(b"Directory")
+                self.client_socket.send(b"Directory")
             else:
                 if acl.check(self.role, os.path.basename(self.current_dir), 'r'):
                     try:
                         image = Image.open(path)
                         self.send_img(image)
                     except FileNotFoundError:
-                        conn.send(b"NotFound")
+                        self.client_socket.send(b"NotFound")
                 else:
                     print("Erreur acces")
         elif args[1] == "ls":
@@ -269,9 +271,9 @@ class ClientThread(Thread):
                     os.path.join(self.current_dir, os.pardir))
                 if len(tmp_dir.split("/")) > len(self.original_dir.split("/")):
                     self.current_dir = tmp_dir
-                    conn.send(b"OK /")
+                    self.client_socket.send(b"OK /")
                 else:
-                    conn.send(b"Err /")
+                    self.client_socket.send(b"Err /")
         elif args[1] == "delete":
             file = "{}/{}".format(self.current_dir, args[2])
             print(file)
@@ -280,18 +282,19 @@ class ClientThread(Thread):
                     if os.listdir(file) == []:
                         os.removedirs(file)
                     else:
-                        conn.send("Error directory not empty".encode())
+                        self.client_socket.send(
+                            "Error directory not empty".encode())
                 else:
                     os.remove(file)
-                    conn.send(b"OK")
+                    self.client_socket.send(b"OK")
                 acl.revoke_all(self.role, args[2])
-            else: 
-                conn.send(b"AccessError")
+            else:
+                self.client_socket.send(b"AccessError")
         elif args[1] == "mkdir":
             if acl.check(self.role, os.path.basename(args[2]), 'w'):
                 path = "{}/{}".format(self.current_dir, args[2])
                 os.mkdir(path)
-                conn.send("OK".encode())
+                self.client_socket.send("OK".encode())
 
                 acl.add({
                     args[2]: {'r', 'w', 'x'},
@@ -309,29 +312,29 @@ class ClientThread(Thread):
         elif args[1] == "touch":
             path = "{}/{}".format(self.current_dir, args[2])
             file = open(path, 'w+')
-            conn.send("OK".encode())
+            self.client_socket.send("OK".encode())
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
         file_list = os.listdir(self.current_dir)
         print(file_list)
         if file_list == []:
-            conn.send("Empty".encode())
+            self.client_socket.send("Empty".encode())
         else:
-            conn.send(",".join(file_list).encode())
+            self.client_socket.send(",".join(file_list).encode())
 
     def send_file(self, file):
         """ Take a file and send it through the socket"""
         file.seek(0, 2)  # Seek end of file
         length = file.tell()
         print(length)
-        conn.send(str(length).encode())
+        self.client_socket.send(str(length).encode())
         if length > 0:
             time.sleep(0.5)
             file.seek(0, 0)
             content = file.read()
             print(content)
-            conn.send(str(content).encode())
+            self.client_socket.send(str(content).encode())
 
     def send_img(self, file):
         """ Take a img and send it through the socket"""
@@ -339,9 +342,9 @@ class ClientThread(Thread):
         pickleData = pickle.dumps(imageDict)
         taille = sys.getsizeof(pickleData)
         print("Taille : {}".format(taille))
-        conn.send(str(taille).encode())
-        conn.send(pickleData)
-        # conn.send(str(content).encode())
+        self.client_socket.send(str(taille).encode())
+        self.client_socket.send(pickleData)
+        # self.client_socket.send(str(content).encode())
 
     def execute_command(self, args):
         """
@@ -350,10 +353,10 @@ class ClientThread(Thread):
         temp_file = tempfile.TemporaryFile(mode='w+')
         run(args,
             stdout=temp_file,
-            stdin=conn.makefile('r'),
+            stdin=self.client_socket.makefile('r'),
             stderr=temp_file)
         temp_file.seek(0)
-        conn.send(temp_file.read().encode())
+        self.client_socket.send(temp_file.read().encode())
         temp_file.close()
 
     def init_db(self, db):
@@ -368,7 +371,7 @@ class ClientThread(Thread):
     def run_command(self, process, args):
         out, err = process.communicate(input=" ".join(args).encode())
         print("{}; {}".format(out.decode('utf-8'), err))
-        conn.send(out)
+        self.client_socket.send(out)
 
     def connect(self, args, db):
         auth = args[1].split(":")
@@ -390,10 +393,10 @@ class ClientThread(Thread):
             # (utiliser une date de co ?)
             print(self.username)
             print(self.role, acl.check(self.role, 'general', 'r'))
-            conn.send("granted;{}".format(row.role).encode())
+            self.client_socket.send("granted;{}".format(row.role).encode())
         else:
-            conn.send(b"forbidden")
-        # conn.send(data)  # echo
+            self.client_socket.send(b"forbidden")
+        # self.client_socket.send(data)  # echo
         time.sleep(0.5)
 
     def updateTime(self, db):
@@ -435,7 +438,7 @@ while True:
     print("Waiting for incoming connections...")
     (connstream, (ip, port)) = tcpsock.accept()
     conn = context.wrap_socket(connstream, server_side=True)
-    newthread = ClientThread(ip, port)
+    newthread = ClientThread(ip, port, conn)
     newthread.start()
     threads.append(newthread)
 
