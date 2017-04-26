@@ -128,7 +128,7 @@ class TermApp(tk.Frame):
         self.editor.configure(state='normal')
         self.editor.insert(
             tk.END, "Commandes disponibles: \n cat : Permet d'afficher un fichier \n ls pour lister les fichiers")
-        self.editor.configure(state='disabled')
+        self.editor.configure(state='normal')
         self.editor.pack(fill=tk.X)
         # self.editor.bind("<Insert>", self.insert_all)
 
@@ -151,9 +151,25 @@ class TermApp(tk.Frame):
         elif command.startswith("edit") or command.startswith("cat") or command.startswith("open"):
             self.edit(command, prompt)
         elif command.startswith("cd"):
-            self.chdir(command, prompt)
+            instruction, target = command.split(None)
+            if target == "..":
+                self.get_back(command, prompt)
+            else:
+                self.chdir(command, prompt)
         elif command.startswith("delete"):
             self.delete(command, prompt)
+
+    def get_back(self, command, prompt):
+        """
+        Allow to cd .. and refresh the tree view
+        """
+        instruction, target = command.split(None)
+        self.sock.send("Graphique chdir ..".encode())
+        msg = self.sock.recv(BUFFER_SIZE).decode()
+        if msg.startswith("OK"):
+            self.editor.replace("0.0", tk.END, "cd into {}".format(target))
+        else:
+            print("Tu n'as le droit de remonter encore")
 
     def chdir(self, command, prompt):
         instruction, target = command.split(None)
@@ -225,7 +241,7 @@ class MainApp(tk.Frame):
         image = Image.open("lenna.gif")
         photo = ImageTk.PhotoImage(image, master=self)
 
-        self.img = tk.Label(self,image = photo)
+        self.img = tk.Label(self, image=photo)
         self.img.image = photo
         self.img.pack()
 
@@ -346,8 +362,9 @@ class MainApp(tk.Frame):
                 countVar = 0
                 self.editor.config(height=24)
                 self.editor.replace("0.0", tk.END, content)
-                print(self.editor.search("ceinture", "1.0", stopindex="end", count=countVar)) #implementer une recherche
-
+                # implementer une recherche
+                print(self.editor.search("ceinture", "1.0",
+                                         stopindex="end", count=countVar))
 
     def get_selected_item(self, event):
         """
@@ -376,7 +393,8 @@ class MainApp(tk.Frame):
         """
         Return the content of a selected item from the tree view UI.
         """
-        self.sock.send("Graphique printimg {}".format(item_dic["text"]).encode())
+        self.sock.send("Graphique printimg {}".format(
+            item_dic["text"]).encode())
         size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(size_of_file)
 
@@ -385,13 +403,13 @@ class MainApp(tk.Frame):
         print("Taille : {}".format(taille))
         imageDict = pickle.loads(img)
         print(imageDict)
-        #if size_of_file == "Directory":
+        # if size_of_file == "Directory":
         #    self.populate_tree_view()
-        #else:
+        # else:
         print("test")
-            #content = self.sock.recv(int(size_of_file)).decode('utf-8')
+        #content = self.sock.recv(int(size_of_file)).decode('utf-8')
         print("fin content")
-            #print(content)
+        # print(content)
         return imageDict['imageFile']
 
     def list_files(self):
