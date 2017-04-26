@@ -382,6 +382,9 @@ class MainApp(tk.Frame):
         print(size_of_file)
         if size_of_file == "Directory":
             self.populate_tree_view()
+        elif size_of_file == "AccessError":
+            #affichage erreur acl ?
+            return "NotFound"
         else:
             print("test")
             content = self.sock.recv(int(size_of_file)).decode('utf-8')

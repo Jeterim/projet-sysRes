@@ -30,13 +30,17 @@ with open('sauvAcl.json', "r") as file:
 
 
 def initAcl():
-    acl.add_roles(['admin', 'doctor', 'psychiatrist', 'employee'])
+    acl.add_roles(['admin', 'doctor', 'psychiatrist', 'nurse'])
     acl.add({
+        #Dossiers racine
         'Psy': {'r', 'w', 'x'},
+        'General': {'r', 'w', 'x'},
+        #Dossiers patients
         'Bruce_Lee': {'r', 'w', 'x'},
         'Janine_Michu': {'r', 'w', 'x'},
         'John_Doe': {'r', 'w', 'x'},
         'Yves_Tedescon': {'r', 'w', 'x'},
+        #Autre
         'adminAction': {'create', 'edit', 'delete', 'modify'},
     })
 
@@ -45,10 +49,16 @@ def initAcl():
             'adminAction': ['create', 'edit', 'delete', 'modify'],
         },
         'doctor': {
-            'general': ['x']
+            'General': ['r', 'w', 'x'],
+            'Psy': ['r', 'w', 'x'],
+            'Bruce_Lee': ['r', 'w', 'x']
         },
         'psychiatrist': {
             'Psy': ['r', 'w', 'x']
+        },
+        'nurse': {
+            'Psy': ['r', 'w', 'x'],
+            'Bruce_Lee': ['r', 'w', 'x']
         }
 
     })
@@ -60,7 +70,7 @@ def saveAcl():
     with open('sauvAcl.json', "w") as file:
         file.write(str(save))
 
-# initAcl() # Si on a besoin d'un reset d'acl
+#initAcl() # Si on a besoin d'un reset d'acl
 saveAcl()  # Sauvegarde pour les changements importants
 
 
@@ -158,27 +168,28 @@ class ClientThread(Thread):
                         conn.send(b"echec delete")
             elif args[0] == "MODIFYACL":
                 print("Mon nom c'est : {}".format(self.username))
-                if args[1] == "grant" and (acl.check(args[2], args[3], args[4]) != True):
-                    print("pret pour grant", acl.get_resources())
-                    if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
-                        print("tout correct")
-                        acl.grant(args[2], args[3], args[4])
-                        print("fin grant")
-                        conn.send(b"grant succeed")
-                    else:
-                        conn.send(b"grant failed")
-                elif args[1] == "revoke" and (acl.check(args[2], args[3], args[4]) == True):
-                    print("pret pour revoke", acl.get_resources())
-                    if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
-                        print("tout correct")
-                        acl.revoke(args[2], args[3], args[4])
-                        print("fin revoke")
-                        conn.send(b"revoke succeed")
-                    else:
-                        conn.send(b"revoke failed")
+                if acl.check(self.role, 'adminAction', 'modify'):
+                    if args[1] == "grant" and (acl.check(args[2], args[3], args[4]) != True):
+                        print("pret pour grant", acl.get_resources())
+                        if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
+                            print("tout correct")
+                            acl.grant(args[2], args[3], args[4])
+                            print("fin grant")
+                            conn.send(b"grant succeed")
+                        else:
+                            conn.send(b"grant failed")
+                    elif args[1] == "revoke" and (acl.check(args[2], args[3], args[4]) == True):
+                        print("pret pour revoke", acl.get_resources())
+                        if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
+                            print("tout correct")
+                            acl.revoke(args[2], args[3], args[4])
+                            print("fin revoke")
+                            conn.send(b"revoke succeed")
+                        else:
+                            conn.send(b"revoke failed")
                 else:
                     print("mauvais")
-                    conn.send(b"failed wrong arguments")
+                    conn.send(b"failed wrong arguments or access")
                 saveAcl()
             elif args[0] == "NULLUSR":
                 conn.send(b"no action")
@@ -189,7 +200,8 @@ class ClientThread(Thread):
                 self.graphic_features(args)
             else:
                 # TODO Check if dangerous command
-                self.execute_command(args)
+                #self.execute_command(args)
+                print("Commande non reconnu")
 
     def graphic_features(self, args):
         """ treat what is send from the graphic client """
@@ -199,36 +211,51 @@ class ClientThread(Thread):
             print(data)
             path = "{}/{}".format(self.current_dir, args[2])
             print(path)
-            with open(path, "w") as file:
-                file.writelines(data)
+            if acl.check(self.role, os.path.basename(self.current_dir), 'w'):
+                with open(path, "w") as file:
+                    file.writelines(data)
+            else:
+                print("Erreur acces")
         elif args[1] == "print":
             path = "{}/{}".format(self.current_dir, args[2])
             if os.path.isdir(path):
-                self.current_dir = path
-                conn.send(b"Directory")
+                if acl.check(self.role, args[2], 'x'):
+                    self.current_dir = path
+                    conn.send(b"Directory")
+                else:
+                    conn.send(b"AccessError")
             else:
-                try:
-                    with open(path, 'r') as file:
-                        self.send_file(file)
-                except FileNotFoundError:
-                    conn.send(b"NotFound")
+                if acl.check(self.role, os.path.basename(self.current_dir), 'r'):
+                    try:
+                        with open(path, 'r') as file:
+                            self.send_file(file)
+                    except FileNotFoundError:
+                        conn.send(b"NotFound")
+                else:
+                    print("Erreur acces")
         elif args[1] == "printimg":
             path = "{}/{}".format(self.current_dir, args[2])
             if os.path.isdir(path):
                 self.current_dir = path
                 conn.send(b"Directory")
             else:
-                try:
-                    image = Image.open(path)
-                    self.send_img(image)
-                except FileNotFoundError:
-                    conn.send(b"NotFound")
+                if acl.check(self.role, os.path.basename(self.current_dir), 'r'):
+                    try:
+                        image = Image.open(path)
+                        self.send_img(image)
+                    except FileNotFoundError:
+                        conn.send(b"NotFound")
+                else:
+                    print("Erreur acces")
         elif args[1] == "ls":
             self.list_dir()
         elif args[1] == "chdir":
             print("Le dir {}".format(args[2]))
             if args[2] != "..":
-                self.current_dir = os.path.abspath(args[2])
+                if acl.check(self.role, os.path.basename(args[2]), 'x'):
+                    self.current_dir = os.path.abspath(args[2])
+                else:
+                    print("Erreur Acces")
             else:
                 tmp_dir = os.path.abspath(
                     os.path.join(self.current_dir, os.pardir))
@@ -243,7 +270,18 @@ class ClientThread(Thread):
             os.remove(file)
             conn.send(b"OK")
         elif args[1] == "mkdir":
-            os.mkdir(args[2])
+            if acl.check(self.role, os.path.basename(args[2]), 'w'):
+                os.mkdir(args[2])
+                acl.add({
+                    args[2]: {'r', 'w', 'x'},
+                })
+                acl.grants({
+                    self.role: {
+                        args[2]: ['r', 'w', 'x']
+                    }
+                })
+            else:
+                print("Erreur Acces")
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
