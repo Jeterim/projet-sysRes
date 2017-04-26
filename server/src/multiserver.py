@@ -239,17 +239,31 @@ class ClientThread(Thread):
                     conn.send(b"Err /")
         elif args[1] == "delete":
             file = "{}/{}".format(self.current_dir, args[2])
-            print(file)
-            os.remove(file)
-            conn.send(b"OK")
+            if os.path.isdir(file):
+                if os.listdir(file) == []:
+                    os.removedirs(file)
+                else:
+                    conn.send("Error directory not empty".encode())
+            else:
+                os.remove(file)
+                conn.send(b"OK")
         elif args[1] == "mkdir":
-            os.mkdir(args[2])
+            path = "{}/{}".format(self.current_dir, args[2])
+            os.mkdir(path)
+            conn.send("OK".encode())
+        elif args[1] == "touch":
+            path = "{}/{}".format(self.current_dir, args[2])
+            file = open(path, 'w+')
+            conn.send("OK".encode())
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))
         file_list = os.listdir(self.current_dir)
         print(file_list)
-        conn.send(",".join(file_list).encode())
+        if file_list == []:
+            conn.send("Empty".encode())
+        else:
+            conn.send(",".join(file_list).encode())
 
     def send_file(self, file):
         """ Take a file and send it through the socket"""
