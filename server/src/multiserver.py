@@ -139,12 +139,9 @@ class ClientThread(Thread):
             if args[0] == "LOGIN":
                 self.connect(args, db)
             elif args[0] == "CREATEUSR":
-                print("Mon nom c'est : {}".format(self.username))
                 if acl.check(self.role, 'adminAction', 'create'):
                     print("Vous avez les acces pour creer une nouvelle personne")
 
-                    # fonction a appeler pour la creation d'une nouvelle
-                    # personne (dict + acl)
                     insert = args[1].split(':')
 
                     if db.query('SELECT key FROM persons WHERE name=:name', name=insert[0]).first() == None:
@@ -156,15 +153,12 @@ class ClientThread(Thread):
                         self.client_socket.send(b"echec creation")
 
             elif args[0] == "EDITUSR":
-                print("Mon nom c'est : {}".format(self.username))
                 print(self.role, acl.check(self.role, 'adminAction', 'edit'))
 
                 print(acl.get_roles())
                 if acl.check(self.role, 'adminAction', 'edit'):
                     print("Vous avez les acces pour editer une personne")
 
-                    # fonction a appeler pour la creation d'une nouvelle
-                    # personne (dict + acl)
                     edit = args[1].split(':')
                     if db.query('SELECT key FROM persons WHERE name=:name and deleted=0', name=edit[0]).first() != None:
                         print("edition accepted")
@@ -175,12 +169,9 @@ class ClientThread(Thread):
                         self.client_socket.send(b"echec update")
 
             elif args[0] == "DELUSR":
-                print("Mon nom c'est : {}".format(self.username))
                 if acl.check(self.role, 'adminAction', 'delete'):
                     print("Vous avez les acces pour supprimer une personne")
 
-                    # fonction a appeler pour la creation d'une nouvelle
-                    # personne (dict + acl)
                     if db.query('SELECT key FROM persons WHERE name=:name and deleted=0', name=args[1]).first() != None and args[1] != self.username:
                         print("deletion accepted")
                         db.query(
@@ -188,29 +179,25 @@ class ClientThread(Thread):
                         self.client_socket.send(b"personne deleted")
                     else:
                         self.client_socket.send(b"echec delete")
+
             elif args[0] == "MODIFYACL":
                 print("Mon nom c'est : {}".format(self.username))
                 if acl.check(self.role, 'adminAction', 'modify'):
                     if args[1] == "grant" and (acl.check(args[2], args[3], args[4]) != True):
-                        print("pret pour grant", acl.get_resources())
                         if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
-                            print("tout correct")
                             acl.grant(args[2], args[3], args[4])
-                            print("fin grant")
                             self.client_socket.send(b"grant succeed")
                         else:
                             self.client_socket.send(b"grant failed")
                     elif args[1] == "revoke" and (acl.check(args[2], args[3], args[4]) == True):
                         print("pret pour revoke", acl.get_resources())
                         if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
-                            print("tout correct")
                             acl.revoke(args[2], args[3], args[4])
-                            print("fin revoke")
                             self.client_socket.send(b"revoke succeed")
                         else:
                             self.client_socket.send(b"revoke failed")
                 else:
-                    print("mauvais")
+                    print("Erreur")
                     self.client_socket.send(
                         b"failed wrong arguments or access")
                 saveAcl()
@@ -231,9 +218,7 @@ class ClientThread(Thread):
         if args[1] == "modify":
             # Recoit le fichier
             data = self.client_socket.recv(int(args[3]) + 1).decode('utf-8')
-            print(data)
             path = "{}/{}".format(self.current_dir, args[2])
-            print(path, self.role, os.path.basename(self.current_dir), acl.check(self.role, os.path.basename(self.current_dir), 'w'))
             if acl.check(self.role, os.path.basename(self.current_dir), 'w'):
                 with open(path, "w") as file:
                     file.writelines(data)

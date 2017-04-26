@@ -253,7 +253,6 @@ class TermApp(tk.Frame):
         Write the content of the file on the server
         """
         file_content = self.editor.get("0.0", tk.END)
-        print(file_content)
         print(sys.getsizeof(file_content))
         self.sock.send("Graphique modify {} {}".format(
             self.filename, sys.getsizeof(file_content)).encode())
