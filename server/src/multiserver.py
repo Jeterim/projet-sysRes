@@ -271,11 +271,12 @@ class ClientThread(Thread):
         length = file.tell()
         print(length)
         conn.send(str(length).encode())
-        time.sleep(0.5)
-        file.seek(0, 0)
-        content = file.read()
-        print(content)
-        conn.send(str(content).encode())
+        if length > 0:
+            time.sleep(0.5)
+            file.seek(0, 0)
+            content = file.read()
+            print(content)
+            conn.send(str(content).encode())
 
     def send_img(self, file):
         """ Take a img and send it through the socket"""

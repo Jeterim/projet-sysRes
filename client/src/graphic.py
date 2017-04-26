@@ -181,7 +181,7 @@ class TermApp(tk.Frame):
                 self.save_file()
                 self.editing = False
                 self.filename = 'empty'
-            elif command.startswith("quit"):
+            elif command.startswith("quit") or command.startswith(":q"):
                 self.editing = False
                 self.filename = 'empty'
 
@@ -236,7 +236,8 @@ class TermApp(tk.Frame):
         size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(size_of_file)
         if size_of_file != "Directory":
-            content = self.sock.recv(int(size_of_file)).decode('utf-8')
+            if size_of_file != 0:
+                content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
             self.editing = True
             self.filename = target
@@ -428,12 +429,12 @@ class MainApp(tk.Frame):
         print(size_of_file)
         if size_of_file == "Directory":
             self.populate_tree_view()
-        else:
-            print("test")
+        elif size_of_file != "Directory" and int(size_of_file) > 0:
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
-            print("fin content")
             print(content)
             return content
+        else:
+            return ''
 
     def get_img_for_item(self, item_dic):
         """
