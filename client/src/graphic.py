@@ -93,11 +93,11 @@ class LoginApp(tk.Frame):
             # attribution du role pour des actions supplementaires cote client
             role = datae[1]
             # Destroy window
-            self.change_window(self.user_id.get())
+            self.change_window(self.user_id.get(), role)
         else:
             tentatives = tentatives - 1
 
-    def change_window(self, username):
+    def change_window(self, username, role):
         """
         Tue la fenetre de login et instancie la fenetre principale
         """
@@ -110,18 +110,19 @@ class LoginApp(tk.Frame):
         nb.add(app, text="Main Window")
         nb.forget(0)
 
-        term = TermApp(self.sock, master=nb, username=username)
+        term = TermApp(self.sock, master=nb, username=username, role=role)
         nb.add(term, text="Console")
 
 
 class TermApp(tk.Frame):
 
-    def __init__(self, sock, master=None, username='Doe'):
+    def __init__(self, sock, master=None, username='Doe', role=None):
         super().__init__(master)
         self.pack()
         self.editing = False
         self.username = username
         self.filename = 'none'
+        self.role = role
         self.sock = sock
         self.create_widgets()
 
@@ -131,6 +132,9 @@ class TermApp(tk.Frame):
         self.editor.configure(state='normal')
         self.editor.insert(
             tk.END, "Commandes disponibles: \n cat : Permet d'afficher un fichier \n ls pour lister les fichiers")
+        if self.role == "admin":
+            self.editor.insert(
+                tk.END, "Tu peux ajouter un nouvel utlisateur (N), Modifier un utilisateur (E), ou supprimer un utilisateur (D)\n")
         self.editor.configure(state='normal')
         self.editor.pack(fill=tk.X)
         # self.editor.bind("<Insert>", self.insert_all)
@@ -147,6 +151,20 @@ class TermApp(tk.Frame):
         prompt, command = line.split('> ')
         self.txt.set("{}@Dossier-medical> ".format(self.username))
         if not(self.editing):
+            if self.role == "admin":
+                line = command.split(None)
+                if command.startswith("adduser") and len(line) == 4:
+                    self.add_user(line)
+                elif command.startswith("edituser") and len(line) == 4:
+                    self.edit_user(line)
+                elif command.startswith("deluser") and len(line) == 2:
+                    self.delete_user(line)
+                elif command.startswith("modifyacl") and len(line) == 5:
+                    self.modify_acl(line)
+                elif command.startswith("adduser") or command.startswith("edituser") or command.startswith("deluser") or command.startswith("modifyacl"):
+                    self.editor.replace(
+                        "0.0", tk.END, "Usage : \nadduser <login> <password> <role> \nedituser <login> <password> <role> \ndeluser <login> \nmodifyacl <action>(grant, revoke) <role> <ressource> <permission>(r, w, x)\n")
+
             if command.startswith("list") or command.startswith("ls"):
                 self.execute_ls(prompt, command)
             elif command.startswith("edit") or command.startswith("vi") or command.startswith("open"):
@@ -185,6 +203,39 @@ class TermApp(tk.Frame):
                 self.editing = False
                 self.filename = 'empty'
 
+    def modify_acl(self, line):
+        """
+        Only for admin
+        Edit files ACL
+        """
+        self.sock.send(bytes("MODIFYACL {} {} {} {}".format(
+            line[1], line[2], line[3], line[4]), 'utf-8'))
+
+    def delete_user(self, line):
+        """
+        Only for admin.
+        Delete any user
+        """
+        self.sock.send(bytes("DELUSR {}".format(line[1]), 'utf-8'))
+
+    def edit_user(self, line):
+        """
+        Edit informations on one user.
+        """
+        pswdhash = hashlib.sha1(
+            line[2].encode('utf-8')).hexdigest()
+        self.sock.send(bytes("EDITUSR {}:{}:{}".format(
+            line[1], pswdhash, line[3]), 'utf-8'))
+
+    def add_user(self, line):
+        """
+        Create a new user with the specified role.
+        """
+        pswdhash = hashlib.sha1(
+            line[2].encode('utf-8')).hexdigest()
+        self.sock.send(bytes("CREATEUSR {}:{}:{}".format(
+            line[1], pswdhash, line[3]), 'utf-8'))
+
     def save_file(self):
         """
         Write the content of the file on the server
@@ -198,6 +249,9 @@ class TermApp(tk.Frame):
         self.sock.send(file_content.encode())
 
     def execute_ls(self, prompt, command):
+        """
+        Handle the ls command
+        """
         values = self.list_files()
         print(values)
         self.editor.replace(
@@ -205,7 +259,7 @@ class TermApp(tk.Frame):
 
     def get_back(self, command, prompt):
         """
-        Allow to cd .. and refresh the tree view
+        Handle the cd .. command
         """
         instruction, target = command.split(None)
         self.sock.send("Graphique chdir ..".encode())
@@ -216,6 +270,9 @@ class TermApp(tk.Frame):
             print("Tu n'as le droit de remonter encore")
 
     def chdir(self, command, prompt):
+        """
+        Allow user to change directory on the server's filesystem
+        """
         instruction, target = command.split(None)
         self.sock.send("Graphique print {}".format(target).encode())
         size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
@@ -227,13 +284,16 @@ class TermApp(tk.Frame):
         elif size_of_file == "AccessError":
             pass
         else:
-
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
             self.editor.replace(
                 "0.0", tk.END, "{}> {} \nError {} is not a directory".format(prompt, command, content))
 
     def edit(self, command, prompt):
+        """
+        launch editor mode if a file is given.
+        if a directory has been given, cd into it.
+        """
         instruction, target = command.split(None)
         self.sock.send("Graphique print {}".format(target).encode())
         size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
@@ -254,6 +314,9 @@ class TermApp(tk.Frame):
             # page1.pop
 
     def delete(self, command, prompt):
+        """
+        delete a file or a directory
+        """
         instruction, target = command.split(None)
         self.sock.send("Graphique delete {}".format(target).encode('utf-8'))
         # time.sleep(0.2)
