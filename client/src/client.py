@@ -86,6 +86,13 @@ def run():
             elif action == "D":
                 delname = input("# Login : ")
                 s.send(bytes("DELUSR {}".format(delname), 'utf-8'))
+
+            elif action == "M":
+                mact = input("# Action : (grant / revoke) ")
+                mrole = input("# Role : (doctor ...) ")
+                mres = input("# Ressource : (psy / dossier ...) ")
+                mperm = input("# Permission : (r, w ou x) ")
+                s.send(bytes("MODIFYACL {} {} {} {}".format(mact, mrole, mres, mperm), 'utf-8'))
             else :
                 s.send(bytes("NULLUSR NULL", 'utf-8'))
 

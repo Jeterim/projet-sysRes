@@ -27,30 +27,20 @@ with open('sauvAcl.json', "r") as file:
     acl.__setstate__(user)
 
 
-
-# initAcl() # Si on a besoin d'un reset d'acl
-# saveAcl() # Sauvegarde pour les changements importants
-
-def saveAcl():
-    save = acl.__getstate__()
-    print(save)
-    with open('sauvAcl.json', "w") as file:
-        file.write(str(save))
-
 def initAcl():
-    acl.add_roles(['admin', 'doctor', 'psychiatrist' 'employee'])
+    acl.add_roles(['admin', 'doctor', 'psychiatrist', 'employee'])
     acl.add({
         'Psy': {'r', 'w', 'x'},
         'Bruce_Lee': {'r', 'w', 'x'},
         'Janine_Michu': {'r', 'w', 'x'},
         'John_Doe': {'r', 'w', 'x'},
         'Yves_Tedescon': {'r', 'w', 'x'},
-        'adminAction': {'create', 'edit', 'delete'},
+        'adminAction': {'create', 'edit', 'delete', 'modify'},
     })
 
     acl.grants({
     'admin': {
-        'adminAction': ['create', 'edit', 'delete'],
+        'adminAction': ['create', 'edit', 'delete', 'modify'],
     },
     'doctor': {
         'general': ['x']
@@ -60,6 +50,15 @@ def initAcl():
     }
 
 })
+
+def saveAcl():
+    save = acl.__getstate__()
+    print(save)
+    with open('sauvAcl.json', "w") as file:
+        file.write(str(save))
+
+#initAcl() # Si on a besoin d'un reset d'acl
+saveAcl() # Sauvegarde pour les changements importants
 
 class ClientThread(Thread):
 
@@ -149,6 +148,30 @@ class ClientThread(Thread):
                         conn.send(b"personne deleted")
                     else:
                         conn.send(b"echec delete")
+            elif args[0] == "MODIFYACL":
+                print("Mon nom c'est : {}".format(self.username))
+                if args[1] == "grant" and (acl.check(args[2], args[3], args[4]) != True):
+                    print("pret pour grant", acl.get_resources())
+                    if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
+                        print("tout correct")
+                        acl.grant(args[2], args[3], args[4])
+                        print("fin grant")
+                        conn.send(b"grant succeed")
+                    else:
+                        conn.send(b"grant failed")
+                elif args[1] == "revoke" and (acl.check(args[2], args[3], args[4]) == True):
+                    print("pret pour revoke", acl.get_resources())
+                    if args[2] in acl.get_roles() and args[3] in acl.get_resources() and args[4] in acl.get_permissions(args[3]):
+                        print("tout correct")
+                        acl.revoke(args[2], args[3], args[4])
+                        print("fin revoke")
+                        conn.send(b"revoke succeed")
+                    else:
+                        conn.send(b"revoke failed")
+                else:
+                    print("mauvais")
+                    conn.send(b"failed wrong arguments")
+                saveAcl()
             elif args[0] == "NULLUSR":
                 conn.send(b"no action")
 
