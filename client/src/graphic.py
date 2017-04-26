@@ -31,6 +31,12 @@ class LoginApp(tk.Frame):
         super().__init__(master)
         self.pack()
         self.create_widgets()
+        if len(sys.argv) == 3:
+            self.server_ip = sys.argv[1]
+            self.port = int(sys.argv[2])
+        else:
+            self.server_ip = '0.0.0.0'
+            self.port = 6262
         self.create_connection()
         self.tentative = 2
         self.acces = 0
@@ -47,7 +53,7 @@ class LoginApp(tk.Frame):
         self.sock = ssl.wrap_socket(socket.socket(
             socket.AF_INET, socket.SOCK_STREAM))
         self.sock.settimeout(4)
-        self.sock.connect((TCP_IP, TCP_PORT))
+        self.sock.connect((self.server_ip, self.port))
 
     def create_widgets(self):
         """
