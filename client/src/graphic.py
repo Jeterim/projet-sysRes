@@ -85,7 +85,7 @@ class LoginApp(tk.Frame):
         pswdhash = hashlib.sha1(self.passwd.get().encode('utf-8')).hexdigest()
         self.sock.send(bytes("{} {}:{}".format(
             "LOGIN", self.user_id.get(), pswdhash), 'utf-8'))
-        time.sleep(0.5)
+        # time.sleep(0.5)
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         if "granted" in data:
             tentatives, access = 0, 1
@@ -93,11 +93,11 @@ class LoginApp(tk.Frame):
             # attribution du role pour des actions supplementaires cote client
             role = datae[1]
             # Destroy window
-            self.change_window()
+            self.change_window(self.user_id.get())
         else:
             tentatives = tentatives - 1
 
-    def change_window(self):
+    def change_window(self, username):
         """
         Tue la fenetre de login et instancie la fenetre principale
         """
@@ -110,15 +110,17 @@ class LoginApp(tk.Frame):
         nb.add(app, text="Main Window")
         nb.forget(0)
 
-        term = TermApp(self.sock, master=nb)
+        term = TermApp(self.sock, master=nb, username=username)
         nb.add(term, text="Console")
 
 
 class TermApp(tk.Frame):
 
-    def __init__(self, sock, master=None):
+    def __init__(self, sock, master=None, username='Doe'):
         super().__init__(master)
         self.pack()
+        self.editing = False
+        self.username = username
         self.sock = sock
         self.create_widgets()
 
@@ -133,7 +135,7 @@ class TermApp(tk.Frame):
         # self.editor.bind("<Insert>", self.insert_all)
 
         self.txt = tk.StringVar()
-        self.txt.set("john@Dossier-medical> ")
+        self.txt.set("{}@Dossier-medical> ".format(self.username))
         self.rootEntry = tk.Entry(self, textvariable=self.txt)
         self.rootEntry.configure(state='normal')
         self.rootEntry.pack(side="bottom", fill=tk.X)
@@ -142,22 +144,31 @@ class TermApp(tk.Frame):
     def cycle_text(self, arg=None):
         line = self.txt.get()
         prompt, command = line.split('> ')
-        self.txt.set("john@Dossier-medical> ")
-        if command.startswith("list") or command.startswith("ls"):
-            values = self.list_files()
-            print(values)
-            self.editor.replace(
-                "0.0", tk.END, "{}> {}\n{}".format(prompt, command, values))
-        elif command.startswith("edit") or command.startswith("cat") or command.startswith("open"):
-            self.edit(command, prompt)
-        elif command.startswith("cd"):
-            instruction, target = command.split(None)
-            if target == "..":
-                self.get_back(command, prompt)
-            else:
-                self.chdir(command, prompt)
-        elif command.startswith("delete"):
-            self.delete(command, prompt)
+        self.txt.set("{}@Dossier-medical> ".format(self.username))
+        if not(self.editing):
+            if command.startswith("list") or command.startswith("ls"):
+                self.execute_ls(prompt, command)
+            elif command.startswith("edit") or command.startswith("vi") or command.startswith("open"):
+                self.edit(command, prompt)
+            elif command.startswith("cd"):
+                instruction, target = command.split(None)
+                if target == "..":
+                    self.get_back(command, prompt)
+                else:
+                    self.chdir(command, prompt)
+            elif command.startswith("delete"):
+                self.delete(command, prompt)
+        else:
+            if command.startswith("save") or command.startswith(":w"):
+                EDITING = False
+            elif command.startswith("quit"):
+                EDITING = False
+
+    def execute_ls(self, prompt, command):
+        values = self.list_files()
+        print(values)
+        self.editor.replace(
+            "0.0", tk.END, "{}> {}\n{}".format(prompt, command, values))
 
     def get_back(self, command, prompt):
         """
