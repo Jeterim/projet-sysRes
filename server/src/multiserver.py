@@ -441,8 +441,12 @@ class ClientThread(Thread):
         print("And now it's {} / {}".format(row.connected, type(row.connected)))
 
 
+if len(sys.argv) == 2:
+    TCP_PORT = int(sys.argv[1])
+else:
+    TCP_PORT = 6262
+
 TCP_IP = '0.0.0.0'
-TCP_PORT = 6262
 BUFFER_SIZE = 2048  # Normally 1024, but we want fast response
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
