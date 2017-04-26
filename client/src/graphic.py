@@ -30,6 +30,8 @@ class LoginApp(tk.Frame):
         self.pack()
         self.create_widgets()
         self.create_connection()
+        self.tentative = 2
+        self.acces = 0
 
     def create_connection(self):
         """
@@ -82,20 +84,20 @@ class LoginApp(tk.Frame):
         """
         Authentification sur le serveur
         """
+        if self.tentative <= 0:
+            self.quit()
         pswdhash = hashlib.sha1(self.passwd.get().encode('utf-8')).hexdigest()
         self.sock.send(bytes("{} {}:{}".format(
             "LOGIN", self.user_id.get(), pswdhash), 'utf-8'))
-        # time.sleep(0.5)
         data = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         if "granted" in data:
-            tentatives, access = 0, 1
             datae = data.split(';')
             # attribution du role pour des actions supplementaires cote client
             role = datae[1]
             # Destroy window
             self.change_window(self.user_id.get(), role)
         else:
-            tentatives = tentatives - 1
+            self.tentative = self.tentative - 1
 
     def change_window(self, username, role):
         """

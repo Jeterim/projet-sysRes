@@ -1,4 +1,4 @@
-Dossier médical de Jérémy
+Dossier médical de Burce Lee
 Amateur de Kung-Fu
 
 Symptomes:
@@ -10,5 +10,6 @@ Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lore
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
+
 
 
