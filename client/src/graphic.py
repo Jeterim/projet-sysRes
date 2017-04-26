@@ -4,13 +4,16 @@ Client graphique du projet de Systeme et Reseaux
 Authors : Jérémy Petit, David Neyron, Quentin Laplanche
 """
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, PhotoImage
+from PIL import Image, ImageTk
 from tkinter import tix
 import socket
 import hashlib
 import time
 import ssl
 import os
+import sys
+import pickle
 
 TCP_IP = '0.0.0.0'
 TCP_PORT = 6262
@@ -122,14 +125,17 @@ class TermApp(tk.Frame):
     def create_widgets(self):
 
         self.editor = tk.Text(self, wrap=tk.WORD)
+        self.editor.configure(state='normal')
         self.editor.insert(
-            tk.END, "Commandes disponibles: \n cat : Permet d'afficher un fichier \n list pour lister les fichiers")
+            tk.END, "Commandes disponibles: \n cat : Permet d'afficher un fichier \n ls pour lister les fichiers")
+        self.editor.configure(state='disabled')
         self.editor.pack(fill=tk.X)
         # self.editor.bind("<Insert>", self.insert_all)
 
         self.txt = tk.StringVar()
         self.txt.set("john@Dossier-medical> ")
         self.rootEntry = tk.Entry(self, textvariable=self.txt)
+        self.rootEntry.configure(state='normal')
         self.rootEntry.pack(side="bottom", fill=tk.X)
         self.rootEntry.bind("<Return>", self.cycle_text)
 
@@ -139,6 +145,7 @@ class TermApp(tk.Frame):
         self.txt.set("john@Dossier-medical> ")
         if command.startswith("list") or command.startswith("ls"):
             values = self.list_files()
+            print(values)
             self.editor.replace(
                 "0.0", tk.END, "{}> {}\n{}".format(prompt, command, values))
         elif command.startswith("edit") or command.startswith("cat") or command.startswith("open"):
@@ -214,6 +221,13 @@ class MainApp(tk.Frame):
         ysb = ttk.Scrollbar(self, orient='vertical', command=self.list.yview)
         self.list.configure(yscroll=ysb.set)
         self.list.pack(side="left")
+
+        image = Image.open("lenna.gif")
+        photo = ImageTk.PhotoImage(image, master=self)
+
+        self.img = tk.Label(self,image = photo)
+        self.img.image = photo
+        self.img.pack()
 
         self.editor = tk.Text(self, wrap=tk.WORD)
         self.editor.insert(tk.END, " ")
@@ -313,9 +327,27 @@ class MainApp(tk.Frame):
         """
         Update the text editor whenever another item is selected in the tree view UI
         """
-        content = self.get_text_for_item(self.get_selected_item(event))
-        if content != "NotFound":
-            self.editor.replace("0.0", tk.END, content)
+        txt = self.get_selected_item(event)
+        _, ext = os.path.splitext(txt['text'])
+        print("extension : {}".format(ext))
+        if ext == ".gif":
+            print("c'est une image")
+            content = self.get_img_for_item(self.get_selected_item(event))
+            #image = Image.open(content)
+            photo = ImageTk.PhotoImage(content, master=self)
+            self.img.image = photo
+            self.img.config(image=photo)
+            self.editor.replace("0.0", tk.END, "")
+            self.editor.config(height=0)
+        else:
+            print("c'est un texte")
+            content = self.get_text_for_item(self.get_selected_item(event))
+            if content != "NotFound":
+                countVar = 0
+                self.editor.config(height=24)
+                self.editor.replace("0.0", tk.END, content)
+                print(self.editor.search("ceinture", "1.0", stopindex="end", count=countVar)) #implementer une recherche
+
 
     def get_selected_item(self, event):
         """
@@ -334,9 +366,33 @@ class MainApp(tk.Frame):
         if size_of_file == "Directory":
             self.populate_tree_view()
         else:
+            print("test")
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
+            print("fin content")
             print(content)
             return content
+
+    def get_img_for_item(self, item_dic):
+        """
+        Return the content of a selected item from the tree view UI.
+        """
+        self.sock.send("Graphique printimg {}".format(item_dic["text"]).encode())
+        size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
+        print(size_of_file)
+
+        img = self.sock.recv(int(size_of_file))
+        taille = sys.getsizeof(img)
+        print("Taille : {}".format(taille))
+        imageDict = pickle.loads(img)
+        print(imageDict)
+        #if size_of_file == "Directory":
+        #    self.populate_tree_view()
+        #else:
+        print("test")
+            #content = self.sock.recv(int(size_of_file)).decode('utf-8')
+        print("fin content")
+            #print(content)
+        return imageDict['imageFile']
 
     def list_files(self):
         """
