@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {'roles': {'admin', 'doctor', 'employee', 'psychiatrist'}, 'struct': {'Psy': {'w', 'r', 'x'}, 'Bruce_Lee': {'w', 'r', 'x'}, 'Janine_Michu': {'w', 'r', 'x'}, 'John_Doe': {'w', 'r', 'x'}, 'Yves_Tedescon': {'w', 'r', 'x'}, 'adminAction': {'create', 'edit', 'modify', 'delete'}, 'general': {'x'}}, 'grants': {'admin': {'adminAction': {'create', 'edit', 'modify', 'delete'}}, 'psychiatrist': {'Psy': {'x', 'r', 'w'}}, 'doctor': {'general': {'x'}}}}
+=======
+{'roles': {'admin', 'psychiatrist', 'nurse', 'employee', 'doctor'}, 'struct': {'Psy': {'w', 'r', 'x'}, 'Bruce_Lee': {'w', 'r', 'x'}, 'Janine_Michu': {'w', 'r', 'x'}, 'John_Doe': {'w', 'r', 'x'}, 'Yves_Tedescon': {'w', 'r', 'x'}, 'adminAction': {'create', 'modify', 'edit', 'delete'}, 'general': {'x'}, 'General': {'w', 'r', 'x'}}, 'grants': {'doctor': {'Psy': {'w', 'r', 'x'}, 'Bruce_Lee': {'w', 'r', 'x'}, 'General': {'w', 'r', 'x'}, 'general': {'x'}}, 'nurse': {'Bruce_Lee': {'w', 'r', 'x'}, 'Psy': {'w', 'r', 'x'}}, 'admin': {'adminAction': {'modify', 'create', 'delete', 'edit'}}, 'psychiatrist': {'Psy': {'w', 'r', 'x'}}}}
+>>>>>>> b956e05eb4b8460d227cee1492b24b5697b2dc84

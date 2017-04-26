@@ -220,33 +220,38 @@ class TermApp(tk.Frame):
         self.sock.send("Graphique print {}".format(target).encode())
         size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(size_of_file)
-        if size_of_file != "Directory":
+        if size_of_file == "Directory":
+            self.editor.replace("0.0", tk.END, "cd into {}".format(target))
+            # time.sleep(1)
+            # self.editor.replace("0.0", tk.END, "{}".format(prompt))
+        elif size_of_file == "AccessError":
+            pass
+        else:
+
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
             self.editor.replace(
                 "0.0", tk.END, "{}> {} \nError {} is not a directory".format(prompt, command, content))
-        else:
-            self.editor.replace("0.0", tk.END, "cd into {}".format(target))
-            # time.sleep(1)
-            # self.editor.replace("0.0", tk.END, "{}".format(prompt))
 
     def edit(self, command, prompt):
         instruction, target = command.split(None)
         self.sock.send("Graphique print {}".format(target).encode())
         size_of_file = self.sock.recv(BUFFER_SIZE).decode('utf-8')
         print(size_of_file)
-        if size_of_file != "Directory":
-            if size_of_file != 0:
-                content = self.sock.recv(int(size_of_file)).decode('utf-8')
+        if size_of_file == "Directory":
+            self.editor.replace(
+                "0.0", tk.END, "{}{} is a directory, so I've cd you into it".format(prompt, target))
+        elif size_of_file == "AccessError":
+            self.editor.replace(
+                "0.0", tk.END, "{} You can't access{}".format(prompt, target))
+        else:
+            content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
             self.editing = True
             self.filename = target
             self.editor.replace(
                 "0.0", tk.END, "{}".format(content))
             # page1.pop
-        else:
-            self.editor.replace(
-                "0.0", tk.END, "{}{} is a directory, so I've cd you into it".format(prompt, target))
 
     def delete(self, command, prompt):
         instruction, target = command.split(None)
@@ -433,6 +438,9 @@ class MainApp(tk.Frame):
             content = self.sock.recv(int(size_of_file)).decode('utf-8')
             print(content)
             return content
+        elif size_of_file == "AccessError":
+            # affichage erreur acl ?
+            return "NotFound"
         else:
             return ''
 
