@@ -30,12 +30,12 @@ with open('sauvAcl.json', "r") as file:
 
 
 def initAcl():
-    acl.add_roles(['admin', 'doctor', 'psychiatrist', 'nurse'])
+    acl.add_roles(['admin', 'doctor', 'psychiatrist', 'physiotherapist', 'nurse'])
     acl.add({
         # Dossiers racine
         'Psy': {'r', 'w', 'x'},
         'kiné': {'r', 'w', 'x'},
-        'General': {'r', 'w', 'x'},
+        'general': {'r', 'w', 'x'},
         # Dossiers patients
         'Bruce_Lee': {'r', 'w', 'x'},
         'Janine_Michu': {'r', 'w', 'x'},
@@ -48,24 +48,39 @@ def initAcl():
     acl.grants({
         'admin': {
             'adminAction': ['create', 'edit', 'delete', 'modify'],
-            'General': ['r', 'w', 'x'],
+            'general': ['r', 'w', 'x'],
             'Psy': ['r', 'w', 'x'],
+            'kiné': ['r', 'w', 'x'],
             'Bruce_Lee': ['r', 'w', 'x'],
             'Janine_Michu': ['r', 'w', 'x'],
             'John_Doe': ['r', 'w', 'x'],
             'Yves_Tedescon': ['r', 'w', 'x']
         },
         'doctor': {
-            'General': ['r', 'w', 'x'],
-            'Psy': ['r', 'w', 'x'],
-            'Bruce_Lee': ['r', 'w', 'x']
+            'general': ['r'],
+            'Medecine': {'r', 'w', 'x'},
         },
         'psychiatrist': {
-            'Psy': ['r', 'w', 'x']
+            'general': ['r'],
+            'Psy': ['r', 'w', 'x'],
+            'Bruce_Lee': ['r', 'w', 'x'],
+            'Janine_Michu': ['r', 'w', 'x'],
+            'John_Doe': ['r', 'w', 'x'],
+            'Yves_Tedescon': ['r', 'w', 'x']
+        },
+        'physiotherapist': {
+            'general': ['r'],
+            'kiné': ['r', 'w', 'x'],
         },
         'nurse': {
-            'Psy': ['r', 'w', 'x'],
-            'Bruce_Lee': ['r', 'w', 'x']
+            'general': ['r'],
+            'Psy': ['r', 'x'],
+            'Bruce_Lee': ['r', 'x'],
+            'Janine_Michu': ['r', 'x'],
+            'John_Doe': ['r', 'x'],
+            'Yves_Tedescon': ['r', 'x'],
+            'kiné': ['r', 'x'],
+            'Medecine': ['r', 'x'],
         }
 
     })
@@ -73,7 +88,6 @@ def initAcl():
 
 def saveAcl():
     save = acl.__getstate__()
-    print(save)
     with open('sauvAcl.json', "w") as file:
         file.write(str(save))
 
@@ -210,7 +224,7 @@ class ClientThread(Thread):
             else:
                 # TODO Check if dangerous command
                 # self.execute_command(args)
-                print("Commande non reconnu")
+                print("Commande non reconnue")
 
     def graphic_features(self, args):
         """ treat what is send from the graphic client """
@@ -219,7 +233,7 @@ class ClientThread(Thread):
             data = self.client_socket.recv(int(args[3]) + 1).decode('utf-8')
             print(data)
             path = "{}/{}".format(self.current_dir, args[2])
-            print(path)
+            print(path, self.role, os.path.basename(self.current_dir), acl.check(self.role, os.path.basename(self.current_dir), 'w'))
             if acl.check(self.role, os.path.basename(self.current_dir), 'w'):
                 with open(path, "w") as file:
                     file.writelines(data)
@@ -257,6 +271,7 @@ class ClientThread(Thread):
                         self.client_socket.send(b"NotFound")
                 else:
                     print("Erreur acces")
+                    self.client_socket.send(b"AccessError")
         elif args[1] == "ls":
             self.list_dir()
         elif args[1] == "chdir":
@@ -288,6 +303,7 @@ class ClientThread(Thread):
                     os.remove(file)
                     self.client_socket.send(b"OK")
                 acl.revoke_all(self.role, args[2])
+                saveAcl()
             else:
                 self.client_socket.send(b"AccessError")
         elif args[1] == "mkdir":
@@ -307,12 +323,16 @@ class ClientThread(Thread):
                         args[2]: ['r', 'w', 'x']
                     }
                 })
+                saveAcl()
             else:
                 print("Erreur Acces")
         elif args[1] == "touch":
-            path = "{}/{}".format(self.current_dir, args[2])
-            file = open(path, 'w+')
-            self.client_socket.send("OK".encode())
+            if acl.check(self.role, os.path.basename(args[2]), 'w'):
+                path = "{}/{}".format(self.current_dir, args[2])
+                file = open(path, 'w+')
+                self.client_socket.send("OK".encode())
+            else:
+                self.client_socket.send("AccessError".encode())
 
     def list_dir(self):
         print("PATH : {}".format(self.current_dir))

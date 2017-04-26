@@ -438,7 +438,7 @@ class Acl(object):
             ret[role][resource].add(permission)
         return dict(ret)
 
-    def show2(self):
+    def show_grants(self):
         """ Show all current grants
 
             Returns: { role: { resource: set(permission) } }
@@ -447,7 +447,6 @@ class Acl(object):
         """
         ret = {}
         for (role, resource, permission) in self._grants:
-            print(permission)
             if not role in ret:
                 ret[role] = {}
             if not resource in ret[role]:
@@ -463,7 +462,7 @@ class Acl(object):
         return {
             'roles': self.get_roles(),
             'struct': self.get(),
-            'grants': self.show2()
+            'grants': self.show_grants()
         }
 
     def __setstate__(self, state):

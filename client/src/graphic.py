@@ -159,15 +159,15 @@ class TermApp(tk.Frame):
                 line = command.split(None)
                 if command.startswith("adduser") and len(line) == 4:
                     self.add_user(line)
-                elif command.startswith("edituser") and len(line) == 4:
+                elif command.startswith("edtuser") and len(line) == 4:
                     self.edit_user(line)
                 elif command.startswith("deluser") and len(line) == 2:
                     self.delete_user(line)
                 elif command.startswith("modifyacl") and len(line) == 5:
                     self.modify_acl(line)
-                elif command.startswith("adduser") or command.startswith("edituser") or command.startswith("deluser") or command.startswith("modifyacl"):
+                elif command.startswith("adduser") or command.startswith("edtuser") or command.startswith("deluser") or command.startswith("modifyacl"):
                     self.editor.replace(
-                        "0.0", tk.END, "Usage : \nadduser <login> <password> <role> \nedituser <login> <password> <role> \ndeluser <login> \nmodifyacl <action>(grant, revoke) <role> <ressource> <permission>(r, w, x)\n")
+                        "0.0", tk.END, "Usage : \nadduser <login> <password> <role> \nedtuser <login> <password> <role> \ndeluser <login> \nmodifyacl <action>(grant, revoke) <role> <ressource> <permission>(r, w, x)\n")
 
             if command.startswith("list") or command.startswith("ls"):
                 self.execute_ls(prompt, command)

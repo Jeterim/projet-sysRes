@@ -1,4 +1,4 @@
-Dossier médical de Burce Lee
+Dossier médical de Bruce Lee
 Amateur de Kung-Fu
 
 Symptomes:
@@ -10,6 +10,8 @@ Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lore
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
 Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum Lorem Ipsum Corpum
+
+
 
 
 
