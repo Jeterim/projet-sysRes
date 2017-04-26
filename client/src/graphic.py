@@ -6,7 +6,6 @@ Authors : Jérémy Petit, David Neyron, Quentin Laplanche
 import tkinter as tk
 from tkinter import ttk
 from tkinter import tix
-from itertools import cycle
 import socket
 import hashlib
 import time
@@ -138,11 +137,11 @@ class TermApp(tk.Frame):
         line = self.txt.get()
         prompt, command = line.split('> ')
         self.txt.set("john@Dossier-medical> ")
-        if command.startswith("ls"):
+        if command.startswith("list") or command.startswith("ls"):
             values = self.list_files()
             self.editor.replace(
                 "0.0", tk.END, "{}> {}\n{}".format(prompt, command, values))
-        elif command.startswith("edit"):
+        elif command.startswith("edit") or command.startswith("cat") or command.startswith("open"):
             self.edit(command, prompt)
         elif command.startswith("cd"):
             self.chdir(command, prompt)
