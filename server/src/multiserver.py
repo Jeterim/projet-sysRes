@@ -292,7 +292,7 @@ class ClientThread(Thread):
             else:
                 self.client_socket.send(b"AccessError")
         elif args[1] == "mkdir":
-            if acl.check(self.role, args[2], 'w'):
+            if acl.check(self.role, os.path.basename(self.current_dir), 'w'):
                 path = "{}/{}".format(self.current_dir, args[2])
                 os.mkdir(path)
                 self.client_socket.send("OK".encode())
@@ -312,7 +312,7 @@ class ClientThread(Thread):
             else:
                 print("Erreur Acces")
         elif args[1] == "touch":
-            if acl.check(self.role, args[2], 'w'):
+            if acl.check(self.role, os.path.basename(self.current_dir), 'w'):
                 path = "{}/{}".format(self.current_dir, args[2])
                 file = open(path, 'w+')
                 self.client_socket.send("OK".encode())
