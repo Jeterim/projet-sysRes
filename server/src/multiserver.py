@@ -277,7 +277,7 @@ class ClientThread(Thread):
         elif args[1] == "delete":
             file = "{}/{}".format(self.current_dir, args[2])
             print(file)
-            if acl.check(self.role, os.path.basename(args[2]), 'w'):
+            if acl.check(self.role, os.path.basename(self.current_dir), 'w'):
                 if os.path.isdir(file):
                     if os.listdir(file) == []:
                         os.removedirs(file)
